@@ -12,6 +12,6 @@ LIBS	= ../libugui.a \
 	  $(CIRCLEHOME)/lib/usb/libusb.a \
 	  $(CIRCLEHOME)/lib/input/libinput.a \
 	  $(CIRCLEHOME)/lib/fs/libfs.a \
-	  $(CIRCLEHOME)/lib/libcircle.a
+	  $(CIRCLEHOME)/lib/$(LIBCIRCLE).a
 
 include $(CIRCLEHOME)/sample/Rules.mk

@@ -2,6 +2,6 @@
 #define __MC6847_H__
 
 void InitMC6847(Uint8 *emul, unsigned char* in_VRAM, int w, int h);
-void Update6847(Uint8 gmode);
+void Update6847(Uint8 gmode, Uint8 *data);
 
 #endif // __MC6847_H__

@@ -92,13 +92,13 @@ int main(int argc,char **argv)
 		{
 			//fwrite(zero, 21*2, 1, out);
 			fwrite(one, 10*2, 1, out);
-			fwrite(zero, 11*2, 1, out);
-			size+=42;
+			fwrite(zero, 10*2, 1, out);
+			size+=40;
 		} else if (byte == '1')
 		{
-			fwrite(one, 21*2, 1, out);
-			fwrite(zero, 21*2, 1, out);
-			size+=84;
+			fwrite(one, 17*2, 1, out);
+			fwrite(zero,17*2, 1, out);
+			size+=(17+17)*2;
 		} else
 		{
 			fwrite(none, 21*2, 1, out);

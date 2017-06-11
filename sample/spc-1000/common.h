@@ -103,7 +103,7 @@ typedef struct
 	int bitTime;
 	Uint32 cnt0, cnt1;
 	int read;
-
+	char title[256];
 	int wrVal;
 	unsigned int wrRisingT;	// rising time
 } CassetteTape;

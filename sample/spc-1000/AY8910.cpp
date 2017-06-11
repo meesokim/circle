@@ -68,8 +68,8 @@ static const unsigned char Envelopes[16][32] =
 
 #define VOL 1
 static const int Volumes[16] =
-{ 0,1,2,4,6,8,11,16,23,32,45,64,90,128,180,255 };
-//{ 0,16,33,50,67,84,101,118,135,152,169,186,203,220,237,254 };
+//{ 0,1,2,4,6,8,11,16,23,32,45,64,90,128,180,255 };
+{ 0,16,33,50,67,84,101,118,135,152,169,186,203,220,237,254 };
 
 CAY8910::CAY8910(CTimer *m_Timer) :
 	m_SpinLock (FALSE)
@@ -419,6 +419,15 @@ TSndQEntry *CAY8910::SndDequeue(void)
 /** Dispatch sound queue entry and make real sound for SDL  **/
 /*************************************************************/
 
+//static int Freq[6];
+static int Vol[6];
+static int Interval[6];
+static int NoiseInterval[6];
+static int Phase[6];
+static int DevFreq;
+static volatile int JF = 0;
+
+//#define DEVFREQ 22050
 
 
 void CAY8910::Sound(int Chn,int Freq,int Volume)
@@ -468,12 +477,12 @@ void CAY8910::DSPCallBack(u32 *stream, int len)
 				if (Phase[i] < (Interval[i]/2))
 				{
 					R1 += Vol[i];
-					R1 = (R1 > 32767) ? 32767: R1;
+					//R1 = (R1 > 32767) ? 32767: R1;
 				}
 				else if (Phase[i] >= (Interval[i]/2) && Phase[i] < Interval[i])
 				{
 					R1 -= Vol[i];
-					R1 = (R1 < -32768) ? -32768: R1;
+					//R1 = (R1 < -32768) ? -32768: R1;
 				}
 				Phase[i] ++;
 				if (Phase[i] >= Interval[i])
@@ -483,7 +492,6 @@ void CAY8910::DSPCallBack(u32 *stream, int len)
 				}
 			}
 		}
-
 		for (i = 3; i < 6; i++) // Noise Generation
 		{
 			if (Interval[i] && Vol[i])
@@ -494,12 +502,12 @@ void CAY8910::DSPCallBack(u32 *stream, int len)
 				if (Phase[i] < (NoiseInterval[i]/2))
 				{
 					R1 += Vol[i];
-					R1 = (R1 > 32767)? 32767: R1;
+					//R1 = (R1 > 32767)? 32767: R1;
 				}
 				else if (Phase[i] >= (NoiseInterval[i]/2) && Phase[i] < NoiseInterval[i])
 				{
 					R1 -= Vol[i];
-					R1 = (R1 < -32768)? -32768: R1;
+					//R1 = (R1 < -32768)? -32768: R1;
 				}
 				Phase[i] ++;
 				if (Phase[i] >= NoiseInterval[i])
@@ -509,9 +517,10 @@ void CAY8910::DSPCallBack(u32 *stream, int len)
 				}
 			}
 		}
-
+		R1 = (R1 > 32767) ? 32767: R1;
+		R1 = (R1 < -32768) ? -32768: R1;
 		R2 = R1;
-		stream[J+0]=0xFFFFF & (R2 + 0x80000);//&0x00FF;
+		stream[J+0]=0xFFFF & (R2 + 0x8000);//&0x00FF;
 		stream[J+1]=stream[J+0];
 	}
 
@@ -537,25 +546,19 @@ void OpenSoundDevice(void)
   SDL_AudioSpec *desired, *obtained;
   int SndBufSize = 2048; // 1024 for 22050, 2048 for 44100
   int Rate = DEVFREQ;
-
   sound_mutex=SDL_CreateMutex();
-
   /* Allocate a desired SDL_AudioSpec */
   desired=(SDL_AudioSpec*)malloc(sizeof(SDL_AudioSpec));
-
   /* Allocate space for the obtained SDL_AudioSpec */
   obtained=(SDL_AudioSpec*)malloc(sizeof(SDL_AudioSpec));
-
   /* set audio parameters */
   desired->freq=Rate;
   desired->format=AUDIO_S16LSB; /* 16-bit signed audio */
   desired->samples=SndBufSize;  /* size audio buffer */
   desired->channels=2;
-
   /* Our callback function */
   desired->callback=DSPCallBack;
   desired->userdata=NULL;
-
   /* Open the audio device */
   if(SDL_OpenAudio(desired, obtained)<0)
   {
@@ -563,19 +566,14 @@ void OpenSoundDevice(void)
       return;
   }
   //printf("Audio Open successed\n");
-
   Rate=obtained->freq;
-
   /* Adjust buffer size to the obtained buffer size */
   SndBufSize=obtained->samples;
-
   /* Start playing */
   SDL_PauseAudio(0);
-
   /* Free memory */
   free(obtained);
   free(desired);
-
   DevFreq = Rate;
   SndQueueInit();
 }

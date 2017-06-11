@@ -36,7 +36,9 @@ class CKernel;
 #include <circle/pwmsounddevice.h>
 #include <circle/usb/usbkeyboard.h>   
 #include <circle/usb/dwhcidevice.h>
+#include <circle/fs/fat/fatfs.h>
 #include <ugui/uguicpp.h>
+#include <sdcard/emmc.h>
 #include "pwmsound.h"
 #include "ay8910.h"
 
@@ -64,29 +66,36 @@ private:
 	CKernelOptions		m_Options;
 	CDeviceNameService	m_DeviceNameService;
 	CScreenDevice		m_Screen;
+	CScreenDevice		m_Framebuffer;
 	CSerialDevice		m_Serial;
 	CExceptionHandler	m_ExceptionHandler;
 	CInterruptSystem	m_Interrupt;
 	CTimer				m_Timer;
 	CLogger				m_Logger;
-
+	CEMMCDevice			m_EMMC;
 	CDWHCIDevice		m_DWHCI;
 	CPWMSound			m_PWMSound; 
+	CFATFileSystem		m_FileSystem;
+	
 //	CPWMSoundDevice		m_PWMSoundDevice;
 	//void OutZ80(register word Port,register byte Value);
 	//byte InZ80(register word Port);	
-	CUGUI				m_GUI;
+//	CUGUI				m_GUI;
 	volatile TShutdownMode m_ShutdownMode;	
 	int 				reset_flag;
 	void reset();
+	//Uint8 framebuffer[320*240*2];
 public:
 	CAY8910				ay8910;
+	char title[1024];
 	int dspcallback(unsigned *stream, int len);
 	void rotate(int i, int idx);
 	static void ShutdownHandler (void);
 	static void KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned char RawKeys[6]);
 	//static CKernel *s_pThis;
 	static int printf(const char *format, ...);
+	void seletape();
+	void loadtape();
 };
 
 #endif

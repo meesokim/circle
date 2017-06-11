@@ -63,6 +63,16 @@ boolean CUGUI::Initialize (void)
 	return TRUE;
 }
 
+void CUGUI::ShowMouse(int b) 
+{
+	CUSBMouseDevice *pMouse =
+		(CUSBMouseDevice *) CDeviceNameService::Get ()->GetDevice ("umouse1", FALSE);
+	if (pMouse != 0)
+	{
+		pMouse->ShowCursor (b);
+	}	
+}
+
 void CUGUI::Update (void)
 {
 	UG_Update ();

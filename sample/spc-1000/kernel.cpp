@@ -26,7 +26,8 @@ extern "C" {
 #include "spcall.h"
 #include "spckey.h"
 int printf(const char *format, ...);
-
+long _sprintf(char *buf, char *format, ...);
+ char *xtoa( char *a, unsigned int x, int opt);
 #ifdef __cplusplus
  }
 #endif
@@ -41,12 +42,20 @@ int printf(const char *format, ...);
 
 //#define SOUND_SAMPLES		(sizeof Sound / sizeof Sound[0] / SOUND_CHANNELS)
 
+#define PARTITION	"emmc1-1"
+#define FILENAME	"circle.txt"
+
 extern char tap0[];
+char tap[1024*1024*5];
 extern char samsung_bmp_c[];
+char *itoa( char *a, int i);
+int sprintf(char *str, const char *format, ...);
+
 
 SPCSystem spcsys;
 
-static int idx;
+static int tappos;
+static int tapidx = 0;
 
 int CasRead(CassetteTape *cas);
 enum colorNum {
@@ -60,8 +69,40 @@ static const char FromKernel[] = "kernel";
 TKeyMap spcKeyHash[0x200]; 
 unsigned char keyMatrix[10];
 static CKernel *s_pThis;   
+static TDirentry taps[256];
+static int files = 0;
+static int tapsize = 0;
+
+int check_tap_file(char *str)
+{
+	int len = strlen(str);
+	if ((len > 4) && (str[len-1] == 'p' || str[len-1] == 'P')&&(str[len-2] == 'a' || str[len-2] == 'A')&&(str[len-3] == 't'||str[len-3] == 'T')&&(str[len-4]=='.'))
+		return 1;
+	return 0;
+}
+void CKernel::seletape()
+{
+	memset(spcsys.cas.title, 0, 256);
+	strcat (spcsys.cas.title, itoa(spcsys.cas.title, tapidx));
+	strcat (spcsys.cas.title, ". ");
+	strcat (spcsys.cas.title, taps[tapidx].chTitle);
+	tappos = -1;
+}
+
+void CKernel::loadtape()
+{
+	int fin = m_FileSystem.FileOpen(taps[tapidx].chTitle);
+	if (fin > 0)
+	{
+		m_FileSystem.FileRead(fin, tap, taps[tapidx].nSize);
+		m_FileSystem.FileClose(fin);
+		tap[taps[tapidx].nSize] = 0;	
+		tapsize = strlen(tap);
+	}
+}
 CKernel::CKernel (void)
 :	m_Screen(320,240),
+	m_Framebuffer(320, 240, true),
 	m_Memory (TRUE),
 	m_Timer(&m_Interrupt),
 	m_Logger (LogPanic, &m_Timer),
@@ -69,7 +110,8 @@ CKernel::CKernel (void)
 	m_ShutdownMode (ShutdownNone)
    ,ay8910(&m_Timer)
    ,m_PWMSound (&m_Interrupt)
-   ,m_GUI(&m_Screen)
+   ,m_EMMC (&m_Interrupt, &m_Timer, &m_ActLED)
+  // ,m_GUI(&m_Screen)
   // ,m_PWMSoundDevice (&m_Interrupt)
 {
 	//m_PWMSoundDevice.CancelPlayback();
@@ -110,22 +152,24 @@ boolean CKernel::Initialize (void)
 		m_Screen.SetPalette(0x46,(u32)COLOR32(0xff, 0x00, 0x00, 0xff));
 		m_Screen.UpdatePalette();
 	}
+	m_Framebuffer.Initialize();
+	m_EMMC.Initialize ();
 	memcpy(m_Screen.GetBuffer(), samsung_bmp_c, 320*240);
 	if (bOK)
 	{
 		bOK = m_Serial.Initialize (115200);
 	}
-
+	memcpy(tap, tap0, strlen(tap0));
 	if (bOK)
 	{
-		CDevice *pTarget = m_DeviceNameService.GetDevice (m_Options.GetLogDevice (), FALSE);
+		CDevice *pTarget;
+//		CDevice *pTarget = m_DeviceNameService.GetDevice (m_Options.GetLogDevice (), FALSE);
 		if (pTarget == 0)
 		{
-			pTarget = &m_Serial;
 		}
+		pTarget = &m_Screen;
 		bOK = m_Logger.Initialize (pTarget);
 	}
-//	memset(m_Screen.GetBuffer(), 0xff, 320*240);
 	if (bOK)
 	{
 		bOK = m_Interrupt.Initialize ();
@@ -158,7 +202,6 @@ void CKernel::reset()
 	spcsys.cas.motor = 0;
 	spcsys.cas.button = CAS_PLAY;
 	ay8910.Reset8910(&(spcsys.ay8910), 0);
-	idx = 0;
 	reset_flag = 1;
 	spcsys.cas.lastTime = 0;
 	return;
@@ -166,7 +209,7 @@ void CKernel::reset()
 
 void CKernel::rotate(int i, int idx)
 {
-	m_Screen.Rotor(i, idx);
+	//m_Screen.Rotor(i, idx);
 }
 
 int CKernel::dspcallback(u32 *stream, int len) 
@@ -180,20 +223,44 @@ int CKernel::dspcallback(u32 *stream, int len)
 }
 
 int count = 0;
-int tapsize = 0;
 #define WAITTIME 983
 TShutdownMode CKernel::Run (void)
 {
 	int frame = 0, ticks = 0, pticks = 0, d = 0;
 	unsigned int t = 0;
 	int cycles = 0;	
-	int time = 0;
+	int time = 0, i;
+	int *dst, *src;
+	char str[100];
+	int perc;
+	tappos = 0;
+	CDevice *pPartition = m_DeviceNameService.GetDevice (PARTITION, TRUE);
+	if (pPartition == 0)
+	{
+		m_Logger.Write (FromKernel, LogPanic, "Partition not found: %s", PARTITION);
+	}
+
+	if (!m_FileSystem.Mount (pPartition))
+	{
+		m_Logger.Write (FromKernel, LogPanic, "Cannot mount partition: %s", PARTITION);
+	}	
+	CUGUI m_GUI(&m_Framebuffer);
+	m_GUI.Initialize();
+	m_GUI.ShowMouse(false);
+	UG_FontSelect(&FONT_7X12);
 	tapsize = strlen(tap0);
 	CString Message;
+	Uint8 fb[320*240];
+	m_Framebuffer.SetBuffer(fb);
+	m_Logger.Initialize (&m_Screen);
+	TScreenStatus status = m_Screen.GetStatus();
+	status.Color = 0xff;
+	status.bCursorOn = 0;
+	m_Screen.SetStatus(status);
 	m_PWMSound.Play(this);//, SOUND_CHANNELS, SOUND_BITS,Sound, SOUND_SAMPLES );
-	InitMC6847(m_Screen.GetBuffer(), &spcsys.VRAM[0], 256,192);	
+	InitMC6847(fb, &spcsys.VRAM[0], 256,192);	
+	
 	//m_PWMSound.Playback (Sound, SOUND_SAMPLES, SOUND_CHANNELS, SOUND_BITS);
-	//m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
 //	CCassWindow CassWindow (0, 0);	
 	CUSBKeyboardDevice *pKeyboard = (CUSBKeyboardDevice *) m_DeviceNameService.GetDevice ("ukbd1", FALSE);
 	if (pKeyboard == 0)
@@ -204,6 +271,26 @@ TShutdownMode CKernel::Run (void)
 	{
 		pKeyboard->RegisterKeyStatusHandlerRaw (KeyStatusHandlerRaw); 		
 	}
+	// Show contents of root directory
+#if 1	
+	TDirentry Direntry;
+	TFindCurrentEntry CurrentEntry;
+	
+	unsigned nEntry = m_FileSystem.RootFindFirst (&Direntry, &CurrentEntry);
+	for (unsigned i = 0; nEntry != 0; i++)
+	{
+		if (!(Direntry.nAttributes & FS_ATTRIB_SYSTEM))
+		{
+			CString FileName;
+			if (check_tap_file(Direntry.chTitle))
+			{
+				taps[files++] = Direntry;
+			}			
+		}
+
+		nEntry = m_FileSystem.RootFindNext (&Direntry, &CurrentEntry);
+	}
+#endif
 	Z80 *R = &spcsys.Z80R;	
 	reset_flag = 1;
 	while(1)
@@ -233,9 +320,23 @@ TShutdownMode CKernel::Run (void)
 			}
 			if (frame%33 == 0)
 			{
-				Update6847(spcsys.GMODE);
-				m_GUI.Update();
-				//R->ICount -= 20;
+				Update6847(spcsys.GMODE, m_Framebuffer.GetBuffer());
+				if (spcsys.cas.read)
+				{
+					perc = tappos * 100 / tapsize;
+					UG_FillFrame( 40, 10, 40+270*perc/100, 15, 0x3);
+					UG_SetForecolor( 0xff);
+					UG_SetBackcolor( 0x0);
+					UG_PutString( 3, 7, title );
+					spcsys.cas.title[0] = 0;
+				}
+				if (spcsys.cas.title)
+				{
+					UG_SetForecolor( 0xff);
+					UG_SetBackcolor( 0x0);
+					UG_PutString( 3, 220, spcsys.cas.title );
+				}
+				memcpy(m_Screen.GetBuffer(), m_Framebuffer.GetBuffer(), 320*240);
 			}
 			ay8910.Loop8910(&spcsys.ay8910, 1);
 			ticks = m_Timer.GetClockTicks() - ticks;
@@ -268,6 +369,22 @@ void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned cha
 		if ((ucModifiers & 0x10 || ucModifiers & 0x01) & (ucModifiers & 0x40 || ucModifiers & 0x4)) {
 			if (RawKeys[0] == 0x4c)
 				s_pThis->reset();
+		}
+		if ((ucModifiers & 0x8) && files > 0) {
+			if (RawKeys[0] == 0x50) {
+				tapidx -= 1;
+				if (tapidx < 0)
+					tapidx = files - 1;
+				s_pThis->seletape();
+				return;
+			} else if (RawKeys[0] == 0x4f) {
+				tapidx += 1;
+				if (tapidx == files)
+					tapidx = 0;
+				s_pThis->seletape();
+				return;
+			}
+			
 		}
 		for(int i = 0; i < 8; i++)
 			if ((ucModifiers & (1 << i)) != 0)
@@ -305,13 +422,16 @@ int CKernel::printf(const char *format, ...)
 int ReadVal(void) 
 {
 	char c = 0;
-	if (idx % 100 == 0)
-		s_pThis->rotate (0, idx/10);
-	c = tap0[idx++];
+	if (tappos < 0)
+	{
+		s_pThis->loadtape();
+		tappos = 0;
+	}
+	c = tap[tappos++];
 	spcsys.cas.read = 1;
 	if (c == 0)
-		idx = 0;
-	//s_pThis->printf("%d %c\r", idx, c);
+		tappos = 0;
+//	sprintf(s_pThis->title, "%d %c\r", tappos, c);
 	return c-'0';
 }
 
@@ -472,7 +592,7 @@ int CasRead(CassetteTape *cas)
 		cas->rdVal = ReadVal();
 		cas->lastTime = cycles;
 		cas->bitTime = cas->rdVal ? (LTONE * 0.6) : (STONE * 0.9);
-		s_pThis->printf("%d%\r", idx * 100 / tapsize);		
+		sprintf(s_pThis->title, "%d%\r", tappos * 100 / tapsize);		
 	}
 
 	switch (cas->rdVal)
@@ -529,19 +649,162 @@ void PatchZ80(register Z80 *R) {
 	return;
 }
 
+int sprintf(char *str, const char *format, ...)
+{
+	va_list args;
+	va_start(args,format);
+	CString s;
+	s.FormatV(format, args);
+	va_end(args);
+	strcpy(str, s);
+	//m_Logger.Write (str);
+	return 1;
+}
+
 int printf(const char *format, ...)
 {
 	va_list args;
 	va_start(args,format);
-	CString str;
-	str.FormatV(format, args);
+	CString s;
+	s.FormatV(format, args);
 	va_end(args);
-	//m_Logger.Write (str);
+	//s_pThis->m_Logger.Write (s);
 	return 1;
 }
 void memset(byte *p, int length, int b)
 {
 	for (int i=0; i<length; i++)
 		*p++ = b;
+}
+
+
+/*+-------------------------------------------------------------------------+
+  |  FILE: sprintf.c                                                        |
+  |  Version: 0.1                                                           |
+  |                                                                         |
+  |  Copyright (c) 2003 Chun Joon Sung                                      |
+  |  Email: chunjoonsung@hanmail.net                                        |
+  +-------------------------------------------------------------------------+*/
+char *itoa( char *a, int i)
+{
+	int sign=0;
+	int temp=0;
+	char buf[16];
+	char *ptr;
+
+	ptr = buf;
+
+	/* zero then return */
+	if( i )
+	{
+		/* make string in reverse form */
+		if( i < 0 )
+			{ i = ~i + 1; sign++; }
+		while( i )
+			{ *ptr++ = (i % 10) + '0'; i = i / 10; }
+		if( sign )
+			*ptr++ = '-';
+		*ptr = '\0';
+
+		/* copy reverse order */
+		for( i=0; i < strlen(buf); i++ )
+			*a++ = buf[strlen(buf)-i-1];
+	}	
+	else
+		*a++ = '0';
+
+	return a;
+}
+
+char *xtoa( char *a, unsigned int x, int opt)
+{
+	int i;
+	int sign=0;
+	int temp=0;
+	char buf[16];
+	char *ptr;
+
+	ptr = buf;
+
+	/* zero then return */
+	if( x )
+	{
+		/* make string in reverse form */
+		while( x )
+			{ *ptr++ = (x&0x0f)<10 ? (x&0x0f)+'0' : (x&0x0f)-10+opt; x>>= 4; }
+
+		*ptr = '\0';
+
+		/* copy reverse order */
+		for( i=0; i < strlen(buf); i++ )
+			*a++ = buf[strlen(buf)-i-1];
+	}
+	else	
+		*a++ = '0';
+
+	return a;
+}
+
+long _sprintf(char *buf, char *format, ...)
+{
+	int cont_flag;
+	int value;
+	int quit;
+	va_list args;	
+	va_start(args,format);	
+	char *start=buf;
+	long *argp=(long *)&args;
+	char *p;
+
+    while( *format )
+	{
+		if( *format != '%' )	/* 일반적인 문자 */
+		{
+			*buf++ = *format++;
+			continue;
+		}
+
+		format++;				/* skip '%' */
+
+		if( *format == '%' )	/* '%' 문자가 연속 두번 있는 경우 */
+		{
+			*buf++ = *format++;
+			continue;
+		}
+		
+		switch( *format )
+		{
+			case 'c' :
+				*buf++ = *(char *)argp++;
+				break;
+
+			case 'd' :
+				buf = itoa(buf,*(int *)argp++);
+				break;
+
+			case 'x' : 
+				buf = xtoa(buf,*(unsigned int *)argp++,'a');
+				break;
+
+			case 'X' : 
+				buf = xtoa(buf,*(unsigned int *)argp++,'A');
+				break;
+
+			case 's' :
+				p=*(char **)argp++;
+				while(*p) 
+						*buf++ = *p++;
+				break;
+
+			default :
+				*buf++ = *format; /* % 뒤에 엉뚱한 문자인 경우 */
+				break;
+        }
+
+		format++;
+    }
+    *buf = '\0';
+
+    return(buf-start);
 }
 

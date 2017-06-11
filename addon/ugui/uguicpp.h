@@ -29,7 +29,7 @@ public:
 	~CUGUI (void);
 
 	boolean Initialize (void);
-
+	void ShowMouse(int);
 	void Update (void);
 
 private:

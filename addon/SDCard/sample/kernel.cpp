@@ -26,7 +26,7 @@
 static const char FromKernel[] = "kernel";
 
 CKernel::CKernel (void)
-:	m_Screen (m_Options.GetWidth (), m_Options.GetHeight ()),
+:	m_Screen (640, 480),
 	m_Timer (&m_Interrupt),
 	m_Logger (m_Options.GetLogLevel (), &m_Timer),
 	m_EMMC (&m_Interrupt, &m_Timer, &m_ActLED)

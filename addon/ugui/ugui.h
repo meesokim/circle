@@ -882,9 +882,15 @@ typedef struct
 
 #ifdef USE_COLOR_INDEX
 #define  C_BLACK					0x0
+#define  C_CYAN						0x1
+#define  C_MAGENTA					0x2
 #define  C_WHITE					0xff
 #define  C_BLUE						0x3
+#define  C_YELLOW					0x4
 #define  C_GRAY						0x5
+#define  C_MEDIUM_AQUA_MARINE		0x6
+#define  C_LIGHT_GRAY               0x7
+#define  C_ORANGE					0x8
 
 #endif
 

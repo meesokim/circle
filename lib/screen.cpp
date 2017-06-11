@@ -73,6 +73,7 @@ CScreenDevice::~CScreenDevice (void)
 
 boolean CScreenDevice::Initialize (void)
 {
+	int i = 0;
 	if (!m_bVirtual)
 	{
 		m_pFrameBuffer = new CBcmFrameBuffer (m_nInitWidth, m_nInitHeight, DEPTH);
@@ -80,6 +81,10 @@ boolean CScreenDevice::Initialize (void)
 		m_pFrameBuffer->SetPalette (NORMAL_COLOR, NORMAL_COLOR16);
 		m_pFrameBuffer->SetPalette (HIGH_COLOR,   HIGH_COLOR16);
 		m_pFrameBuffer->SetPalette (HALF_COLOR,   HALF_COLOR16);
+		for(i=0;i<17;i++)
+		{
+			m_pFrameBuffer->SetPalette (i, COLOR32(i*16,i*16,i*16,0xf0));
+		}
 #endif
 		if (!m_pFrameBuffer->Initialize ())
 		{
@@ -124,6 +129,11 @@ boolean CScreenDevice::Initialize (void)
 	CDeviceNameService::Get ()->AddDevice ("tty1", this, FALSE);
 
 	return TRUE;
+}
+
+void CScreenDevice::SetBuffer(TScreenColor *buf)
+{
+	m_pBuffer = buf;
 }
 
 unsigned CScreenDevice::GetWidth (void) const

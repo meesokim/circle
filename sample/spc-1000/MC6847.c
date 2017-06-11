@@ -44,12 +44,10 @@ unsigned char *VRAM;
 #define SCREEN_TEXT_START 0
 #define SCREEN_ATTR_START 0x800
 #define FILL(a,d,c) pos=d;while(pos-->0)*a++=c
-char framebuffer[320*240];
-void Update6847(Uint8 gmode)
+void Update6847(Uint8 gmode, Uint8 *data)
 {
 	int pos = 0;
 //	Uint8 gmode = spcsys.GMODE;
-	Uint8 *data = frameBuf;
 	Uint8 _gm0, _gm1, _ag, _css;
 	Uint16 _page, y, h, x, mask;
 	Uint8 attr, ch, b, cix, c;
@@ -183,7 +181,6 @@ void Update6847(Uint8 gmode)
       }
       FILL(data, repb, border);
     }
-	//memset(frameBuf, 0x46, 320*240);
 }
 
 /**

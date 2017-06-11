@@ -121,6 +121,7 @@ public:
 	void Rotor (unsigned nIndex,		// 0..3
 		    unsigned nCount);		// 0..3
 
+	void SetBuffer(TScreenColor *buf);
 private:
 	void Write (char chChar);
 
