@@ -144,6 +144,7 @@
 
 #define MAILBOX_CHANNEL_PM	0			// power management
 #define MAILBOX_CHANNEL_FB 	1			// frame buffer
+#define MAILBOX_CHANNEL_AUDIO 3
 #define BCM_MAILBOX_PROP_OUT	8			// property tags (ARM to VC)
 
 //

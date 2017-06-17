@@ -520,7 +520,7 @@ void CAY8910::DSPCallBack(u32 *stream, int len)
 		R1 = (R1 > 32767) ? 32767: R1;
 		R1 = (R1 < -32768) ? -32768: R1;
 		R2 = R1;
-		stream[J+0]=0xFFFF & (R2 + 0x8000);//&0x00FF;
+		stream[J+0]=0xFFFF & (R2 + 0x8000)>>4;//&0x00FF;
 		stream[J+1]=stream[J+0];
 	}
 

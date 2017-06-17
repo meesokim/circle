@@ -20,6 +20,7 @@
 #ifndef _circle_pwmsounddevice_h
 #define _circle_pwmsounddevice_h
 
+#include <circle/bcmmailbox.h>
 #include <circle/pwmsoundbasedevice.h>
 #include <circle/interrupt.h>
 #include <circle/types.h>
@@ -46,6 +47,7 @@ private:
 	unsigned  m_nSamples;
 	unsigned  m_nChannels;
 	unsigned  m_nBitsPerSample;
+	CBcmMailBox m_mbSound;
 };
 
 #endif
