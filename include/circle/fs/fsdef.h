@@ -26,11 +26,14 @@
 
 #define FS_TITLE_LEN	12				// maximum of all file systems
 
+#define MAX_LONG_NAME 2048
+
 struct TDirentry					// for directory listing
 {
 	char		chTitle[FS_TITLE_LEN+1];	// 0-terminated
 	unsigned	nSize;
 	unsigned	nAttributes;
+	char		chLongTitle[MAX_LONG_NAME];
 };
 
 #define FS_ATTRIB_NONE		0x00

@@ -444,7 +444,7 @@ void CAY8910::Sound(int Chn,int Freq,int Volume)
 	if (Interval[Chn] == 0)
 		Vol[Chn] = 0;
 	else
-		Vol[Chn] = Volume * 200;//spconf.snd_vol; // do not exceed 32767
+		Vol[Chn] = Volume * 50;//spconf.snd_vol; // do not exceed 32767
 }
 
 void CAY8910::DSPCallBack(u32 *stream, int len)
@@ -517,10 +517,10 @@ void CAY8910::DSPCallBack(u32 *stream, int len)
 				}
 			}
 		}
-		R1 = (R1 > 32767) ? 32767: R1;
-		R1 = (R1 < -32768) ? -32768: R1;
-		R2 = R1;
-		stream[J+0]=0xFFFF & (R2 + 0x8000)>>4;//&0x00FF;
+		R1 = R1 / 16;
+		R1 = (R1 > 2047) ? 2047: R1;
+		R1 = (R1 < -2048) ? -2048: R1;
+		stream[J+0]=(0xFFF & (R1 + 2048));//&0x00FF;
 		stream[J+1]=stream[J+0];
 	}
 

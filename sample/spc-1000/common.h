@@ -179,6 +179,8 @@ typedef struct
 	CassetteTape cas;
     //FloppyDisk fdd;
 	Printer prt;
+	byte turbo;
+	byte volume;
 } SPCSystem;
 
 /**

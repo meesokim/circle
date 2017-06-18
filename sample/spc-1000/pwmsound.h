@@ -59,6 +59,7 @@ private:
 	unsigned  m_s;
 	u8   *m_p;
 	CBcmRandomNumberGenerator m_Random;
+	CBcmMailBox m_mbSound;	
 };
 
 #endif

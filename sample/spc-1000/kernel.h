@@ -96,6 +96,8 @@ public:
 	static int printf(const char *format, ...);
 	void seletape();
 	void loadtape();
+	void toggle_turbo();
+	void volume(int i);
 };
 
 #endif

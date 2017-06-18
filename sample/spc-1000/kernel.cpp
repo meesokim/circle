@@ -38,6 +38,7 @@ long _sprintf(char *buf, char *format, ...);
 #include <circle/screen.h>
 #include <circle/debug.h>
 #include <circle/util.h>
+#include <circle/bcmmailbox.h>
 #include <assert.h>
 
 //#define SOUND_SAMPLES		(sizeof Sound / sizeof Sound[0] / SOUND_CHANNELS)
@@ -51,6 +52,110 @@ extern char samsung_bmp_c[];
 char *itoa( char *a, int i);
 int sprintf(char *str, const char *format, ...);
 
+typedef unsigned int uint32_t ;
+typedef int int32_t;
+typedef unsigned short uint16_t;
+
+typedef enum
+{
+   VC_AUDIO_MSG_TYPE_RESULT,              // Generic result
+   VC_AUDIO_MSG_TYPE_COMPLETE,              // playback of samples complete
+   VC_AUDIO_MSG_TYPE_CONFIG,                 // Configure
+   VC_AUDIO_MSG_TYPE_CONTROL,                 // control 
+   VC_AUDIO_MSG_TYPE_OPEN,                 //  open
+   VC_AUDIO_MSG_TYPE_CLOSE,                 // close/shutdown
+   VC_AUDIO_MSG_TYPE_START,                 // start output (i.e. resume)
+   VC_AUDIO_MSG_TYPE_STOP,                 // stop output (i.e. pause)
+   VC_AUDIO_MSG_TYPE_WRITE,                 // write samples
+   VC_AUDIO_MSG_TYPE_MAX
+
+} VC_AUDIO_MSG_TYPE;
+
+// configure the audio
+typedef struct
+{
+   uint32_t channels;
+   uint32_t samplerate;
+   uint32_t bps;
+
+} VC_AUDIO_CONFIG_T;
+
+typedef struct
+{
+   uint32_t volume;
+   uint32_t dest;
+
+} VC_AUDIO_CONTROL_T;
+
+// audio
+typedef struct
+{
+   uint32_t dummy;
+
+} VC_AUDIO_OPEN_T;
+
+// audio
+typedef struct
+{
+   uint32_t dummy;
+
+} VC_AUDIO_CLOSE_T;
+// audio
+typedef struct
+{
+   uint32_t dummy;
+
+} VC_AUDIO_START_T;
+// audio
+typedef struct
+{
+   uint32_t draining;
+
+} VC_AUDIO_STOP_T;
+
+// configure the write audio samples
+typedef struct
+{
+   uint32_t count; // in bytes
+   void *callback;
+   void *cookie;
+   uint16_t silence;
+   uint16_t max_packet;
+} VC_AUDIO_WRITE_T;
+
+// Generic result for a request (VC->HOST)
+typedef struct
+{
+   int32_t success;  // Success value
+
+} VC_AUDIO_RESULT_T;
+
+// Generic result for a request (VC->HOST)
+typedef struct
+{
+   int32_t count;  // Success value
+   void *callback;
+   void *cookie;
+} VC_AUDIO_COMPLETE_T;
+
+typedef struct
+{
+   int32_t type;     // Message type (VC_AUDIO_MSG_TYPE)
+   union
+   {
+	VC_AUDIO_CONFIG_T    config;
+    VC_AUDIO_CONTROL_T   control;
+	VC_AUDIO_OPEN_T  open;
+	VC_AUDIO_CLOSE_T  close;
+	VC_AUDIO_START_T  start;
+	VC_AUDIO_STOP_T  stop;
+	VC_AUDIO_WRITE_T  write;
+	VC_AUDIO_RESULT_T result;
+	VC_AUDIO_COMPLETE_T complete;
+   } u;
+} VC_AUDIO_MSG_T;
+
+static VC_AUDIO_MSG_T audio;
 
 SPCSystem spcsys;
 
@@ -85,7 +190,10 @@ void CKernel::seletape()
 	memset(spcsys.cas.title, 0, 256);
 	strcat (spcsys.cas.title, itoa(spcsys.cas.title, tapidx));
 	strcat (spcsys.cas.title, ". ");
-	strcat (spcsys.cas.title, taps[tapidx].chTitle);
+	if (taps[tapidx].chLongTitle[0] != 0)
+		strcat (spcsys.cas.title, taps[tapidx].chLongTitle);
+	else
+		strcat (spcsys.cas.title, taps[tapidx].chTitle);
 	tappos = -1;
 }
 
@@ -154,6 +262,7 @@ boolean CKernel::Initialize (void)
 	}
 	m_Framebuffer.Initialize();
 	m_EMMC.Initialize ();
+	
 	memcpy(m_Screen.GetBuffer(), samsung_bmp_c, 320*240);
 	if (bOK)
 	{
@@ -169,6 +278,10 @@ boolean CKernel::Initialize (void)
 		}
 		pTarget = &m_Screen;
 		bOK = m_Logger.Initialize (pTarget);
+//		spcsys.volue = m_Options.GetDecimal("volume");
+		spcsys.volume = 10;
+		if (spcsys.volume < 0)
+			spcsys.volume = 8;
 	}
 	if (bOK)
 	{
@@ -204,6 +317,7 @@ void CKernel::reset()
 	ay8910.Reset8910(&(spcsys.ay8910), 0);
 	reset_flag = 1;
 	spcsys.cas.lastTime = 0;
+	spcsys.turbo = 0;
 	return;
 }
 
@@ -217,9 +331,26 @@ int CKernel::dspcallback(u32 *stream, int len)
 	static unsigned int nCount = 0;
 	ay8910.DSPCallBack(stream, len);
 	
+	for(int i = 0; i < len; i++)
+	{
+		stream[i] = stream[i] >> (10-spcsys.volume);
+	}
 //	memcpy(stream, (void *)(&Sound[0]+nCount), len);
 //	m_Logger.Write (FromKernel, LogNoti*******ce, "Compile time: " __DATE__ " " __TIME__);
 	return len;
+}
+
+void CKernel::toggle_turbo()
+{
+	spcsys.turbo = !spcsys.turbo;
+}
+
+void CKernel::volume(int i)
+{
+	if (i > 0 && spcsys.volume < 10)
+		spcsys.volume++;
+	if (i < 0 && spcsys.volume > 0)
+		spcsys.volume--;
 }
 
 int count = 0;
@@ -247,7 +378,7 @@ TShutdownMode CKernel::Run (void)
 	CUGUI m_GUI(&m_Framebuffer);
 	m_GUI.Initialize();
 	m_GUI.ShowMouse(false);
-	UG_FontSelect(&FONT_7X12);
+	UG_FontSelect(&FONT_8X12);
 	tapsize = strlen(tap0);
 	CString Message;
 	Uint8 fb[320*240];
@@ -257,6 +388,18 @@ TShutdownMode CKernel::Run (void)
 	status.Color = 0xff;
 	status.bCursorOn = 0;
 	m_Screen.SetStatus(status);
+	CBcmPropertyTags Tags;
+	TPropertyTagVchiqInit vchiqInit;
+	Tags.GetTag (PROPTAG_SET_VCHIQ_INIT, &vchiqInit, sizeof vchiqInit);		
+#if 0	// vchiq audio control for sound path 3.5mm to HDMI
+	CBcmMailBox m_mbSound(3);
+	audio.type = VC_AUDIO_MSG_TYPE_OPEN;
+	m_mbSound.WriteRead((unsigned int)&audio);
+	audio.type = VC_AUDIO_MSG_TYPE_CONTROL;
+	audio.u.control.volume = 0;
+	audio.u.control.dest = 0;
+	m_mbSound.WriteRead((unsigned int)&audio);		
+#endif
 	m_PWMSound.Play(this);//, SOUND_CHANNELS, SOUND_BITS,Sound, SOUND_SAMPLES );
 	InitMC6847(fb, &spcsys.VRAM[0], 256,192);	
 	
@@ -340,10 +483,9 @@ TShutdownMode CKernel::Run (void)
 			}
 			ay8910.Loop8910(&spcsys.ay8910, 1);
 			ticks = m_Timer.GetClockTicks() - ticks;
-			if (!spcsys.cas.read)
+			if (!spcsys.cas.read && !spcsys.turbo)
 				m_Timer.usDelay(WAITTIME - (ticks < WAITTIME ? ticks : WAITTIME));
-			else
-				spcsys.cas.read = 0;
+			spcsys.cas.read = 0;
 			//m_Timer.usDelay(ticks);
 			ticks = m_Timer.GetClockTicks();
 			if (frame%1000  == 0)
@@ -383,8 +525,16 @@ void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned cha
 					tapidx = 0;
 				s_pThis->seletape();
 				return;
+			} else if (RawKeys[0] == 0x44) {
+				s_pThis->toggle_turbo();
+				return;
+			} else if (RawKeys[0] == 0x52) {
+				s_pThis->volume(1);
+				return;
+			} else if (RawKeys[0] == 0x51) {
+				s_pThis->volume(-1);
+				return;
 			}
-			
 		}
 		for(int i = 0; i < 8; i++)
 			if ((ucModifiers & (1 << i)) != 0)
@@ -428,7 +578,7 @@ int ReadVal(void)
 		tappos = 0;
 	}
 	c = tap[tappos++];
-	spcsys.cas.read = 1;
+	spcsys.cas.read++;
 	if (c == 0)
 		tappos = 0;
 //	sprintf(s_pThis->title, "%d %c\r", tappos, c);
@@ -547,7 +697,7 @@ byte InZ80(register word Port)
 //                {
 //                    retval |= 0x20;
 //                }
-				if (1) //(spcsys.cas.button == CAS_PLAY && spcsys.cas.motor)
+				if (spcsys.cas.motor)
 				{
 					if (CasRead(&spcsys.cas) == 1)
 							retval |= 0x80; // high

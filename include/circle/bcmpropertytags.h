@@ -58,6 +58,7 @@
 #define PROPTAG_GET_OVERSCAN		0x0004000a
 #define PROPTAG_TST_OVERSCAN		0x0004400a
 #define PROPTAG_SET_OVERSCAN		0x0004800a
+#define PROPTAG_SET_VCHIQ_INIT		0x00048010
 
 
 struct TPropertyTag
@@ -237,7 +238,12 @@ struct TPropertyTagCommandLine
 struct TPropertyTagOverscan
 {
 	TPropertyTag	Tag;
+};
 
+struct TPropertyTagVchiqInit
+{
+	TPropertyTag	Tag;
+	u32 value;
 };
 
 class CBcmPropertyTags

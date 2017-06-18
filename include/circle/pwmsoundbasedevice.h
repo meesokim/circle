@@ -26,6 +26,7 @@
 #include <circle/dmachannel.h>
 #include <circle/spinlock.h>
 #include <circle/types.h>
+#include <circle/bcmmailbox.h>
 
 enum TPWMSoundState
 {
