@@ -47,6 +47,7 @@ long _sprintf(char *buf, char *format, ...);
 #define FILENAME	"circle.txt"
 
 extern char tap0[];
+char cas[1024*1024*5/8];
 char tap[1024*1024*5];
 extern char samsung_bmp_c[];
 char *itoa( char *a, int i);
@@ -183,6 +184,8 @@ int check_tap_file(char *str)
 	int len = strlen(str);
 	if ((len > 4) && (str[len-1] == 'p' || str[len-1] == 'P')&&(str[len-2] == 'a' || str[len-2] == 'A')&&(str[len-3] == 't'||str[len-3] == 'T')&&(str[len-4]=='.'))
 		return 1;
+	if ((len > 4) && (str[len-1] == 's' || str[len-1] == 'S')&&(str[len-2] == 'a' || str[len-2] == 'A')&&(str[len-3] == 'c'||str[len-3] == 'C')&&(str[len-4]=='.'))
+		return 2;
 	return 0;
 }
 void CKernel::seletape()
@@ -199,13 +202,31 @@ void CKernel::seletape()
 
 void CKernel::loadtape()
 {
+	int length = taps[tapidx].nSize;
 	int fin = m_FileSystem.FileOpen(taps[tapidx].chTitle);
+	char c = taps[tapidx].chTitle[strlen(taps[tapidx].chTitle)-1];
 	if (fin > 0)
 	{
-		m_FileSystem.FileRead(fin, tap, taps[tapidx].nSize);
-		m_FileSystem.FileClose(fin);
-		tap[taps[tapidx].nSize] = 0;	
-		tapsize = strlen(tap);
+		if (c =='P' || c == 'p') // tap file
+		{
+			m_FileSystem.FileRead(fin, tap+10, length);
+			m_FileSystem.FileClose(fin);
+			memset(tap, '0', 10);
+			tap[taps[tapidx].nSize+10] = 0;	
+			tapsize = strlen(tap);
+		} else // cas file
+		{
+			m_FileSystem.FileRead(fin, cas, length);
+			m_FileSystem.FileClose(fin);
+			memset(tap, '0', 10);
+			for(int i = 0; i < length; i++)
+			{
+				for(int j = 0; j < 8; j++)
+					tap[10+i*8+j] = ((cas[i] & (0x80 >> j)) ? '1' : '0');
+			}
+			tap[length*8+10] = 0;
+			tapsize = strlen(tap);
+		}
 	}
 }
 CKernel::CKernel (void)
@@ -425,10 +446,9 @@ TShutdownMode CKernel::Run (void)
 		if (!(Direntry.nAttributes & FS_ATTRIB_SYSTEM))
 		{
 			CString FileName;
-			if (check_tap_file(Direntry.chTitle))
-			{
+			int ret = check_tap_file(Direntry.chTitle);
+			if (ret > 0)
 				taps[files++] = Direntry;
-			}			
 		}
 
 		nEntry = m_FileSystem.RootFindNext (&Direntry, &CurrentEntry);
