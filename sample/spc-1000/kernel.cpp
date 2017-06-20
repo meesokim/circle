@@ -43,7 +43,8 @@ long _sprintf(char *buf, char *format, ...);
 
 //#define SOUND_SAMPLES		(sizeof Sound / sizeof Sound[0] / SOUND_CHANNELS)
 
-#define PARTITION	"emmc1-1"
+#define PARTITION1	"emmc1"
+#define PARTITION   "emmc1-1"
 #define FILENAME	"circle.txt"
 
 extern char tap0[];
@@ -387,6 +388,10 @@ TShutdownMode CKernel::Run (void)
 	int perc;
 	tappos = 0;
 	CDevice *pPartition = m_DeviceNameService.GetDevice (PARTITION, TRUE);
+	if (pPartition == 0)
+	{
+		pPartition = m_DeviceNameService.GetDevice (PARTITION1, TRUE);
+	}
 	if (pPartition == 0)
 	{
 		m_Logger.Write (FromKernel, LogPanic, "Partition not found: %s", PARTITION);

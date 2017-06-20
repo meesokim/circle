@@ -20,9 +20,9 @@
 
 CIRCLEHOME = ../..
 
-OBJS	= partition.o partitionmanager.o
+OBJS	= $(RASPPI)/partition.o $(RASPPI)/partitionmanager.o
 
-libfs.a: $(OBJS)
+$(RASPPI)/libfs.a: $(OBJS)
 	rm -f $@
 	$(AR) cr $@ $(OBJS)
 

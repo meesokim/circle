@@ -32,6 +32,7 @@ CPP	= $(PREFIX)g++
 AS	= $(CC)
 LD	= $(PREFIX)ld
 AR	= $(PREFIX)ar
+MD  = mkdir
 
 #GCCVER = `$(CC) -dumpversion`
 
@@ -61,14 +62,17 @@ AFLAGS	+= $(ARCH) -DRASPPI=$(RASPPI) $(INCLUDE)
 CFLAGS	+= $(ARCH) -Wall -fsigned-char -fno-builtin -nostdinc -nostdlib \
 	   -D__circle__ -DRASPPI=$(RASPPI) -DDEPTH=$(DEPTH) $(INCLUDE) $(OPTIMIZE) -g #-DNDEBUG
 CPPFLAGS+= $(CFLAGS) -fno-exceptions -fno-rtti -std=c++14
-
-%.o: %.S
+	
+$(RASPPI)/%.o: %.S
+	@$(MD) -p $(RASPPI)
 	$(AS) $(AFLAGS) -c -o $@ $<
 
-%.o: %.c
+$(RASPPI)/%.o: %.c
+	@$(MD) -p $(RASPPI)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-%.o: %.cpp
+$(RASPPI)/%.o: %.cpp
+	@$(MD) -p $(RASPPI)
 	$(CPP) $(CPPFLAGS) -c -o $@ $<
 
 $(TARGET).img: $(OBJS) $(LIBS) $(CIRCLEHOME)/lib/startup.o $(CIRCLEHOME)/circle.ld
@@ -78,4 +82,4 @@ $(TARGET).img: $(OBJS) $(LIBS) $(CIRCLEHOME)/lib/startup.o $(CIRCLEHOME)/circle.
 	wc -c $(TARGET).img
 
 clean:
-	rm -f *.o *.a *.elf *.lst *.img *.cir *.map *~ $(EXTRACLEAN)
+	rm -f $(RASPPI)/*.o $(RASPPI)/*.a *.elf *.lst *.img *.cir *.map *~ $(EXTRACLEAN)

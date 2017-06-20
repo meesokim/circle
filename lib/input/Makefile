@@ -20,10 +20,10 @@
 
 CIRCLEHOME = ../..
 
-OBJS	= keyboardbehaviour.o keymap.o mousebehaviour.o touchscreen.o
+OBJS	= $(RASPPI)/keyboardbehaviour.o $(RASPPI)/keymap.o $(RASPPI)/mousebehaviour.o $(RASPPI)/touchscreen.o
 
-libinput.a: $(OBJS)
-	rm -f libinput.a
-	$(AR) cr libinput.a $(OBJS)
+$(RASPPI)/libinput.a: $(OBJS)
+	rm -f $@
+	$(AR) cr $@ $(OBJS)
 
 include $(CIRCLEHOME)/Rules.mk

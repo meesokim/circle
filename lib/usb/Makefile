@@ -20,17 +20,17 @@
 
 CIRCLEHOME = ../..
 
-OBJS	= dwhcidevice.o dwhciregister.o dwhcixferstagedata.o \
-	  usbconfigparser.o usbdevice.o usbendpoint.o usbhostcontroller.o usbrequest.o usbstring.o \
-	  smsc951x.o macaddress.o netdevice.o usbdevicefactory.o usbstandardhub.o \
-	  usbmassdevice.o \
-	  dwhciframeschednper.o dwhciframeschedper.o usbkeyboard.o \
-	  dwhcirootport.o usbhiddevice.o usbmouse.o usbgamepad.o \
-	  usbfunction.o \
-	  dwhciframeschednsplit.o usbprinter.o usbbluetooth.o usbmidi.o usbcdcethernet.o
+OBJS	= $(RASPPI)/dwhcidevice.o $(RASPPI)/dwhciregister.o $(RASPPI)/dwhcixferstagedata.o \
+	  $(RASPPI)/usbconfigparser.o $(RASPPI)/usbdevice.o $(RASPPI)/usbendpoint.o $(RASPPI)/usbhostcontroller.o $(RASPPI)/usbrequest.o $(RASPPI)/usbstring.o \
+	  $(RASPPI)/smsc951x.o $(RASPPI)/macaddress.o $(RASPPI)/netdevice.o $(RASPPI)/usbdevicefactory.o $(RASPPI)/usbstandardhub.o \
+	  $(RASPPI)/usbmassdevice.o \
+	  $(RASPPI)/dwhciframeschednper.o $(RASPPI)/dwhciframeschedper.o $(RASPPI)/usbkeyboard.o \
+	  $(RASPPI)/dwhcirootport.o $(RASPPI)/usbhiddevice.o $(RASPPI)/usbmouse.o $(RASPPI)/usbgamepad.o \
+	  $(RASPPI)/usbfunction.o \
+	  $(RASPPI)/dwhciframeschednsplit.o $(RASPPI)/usbprinter.o $(RASPPI)/usbbluetooth.o $(RASPPI)/usbmidi.o $(RASPPI)/usbcdcethernet.o
 
-libusb.a: $(OBJS)
-	rm -f libusb.a
-	$(AR) cr libusb.a $(OBJS)
+$(RASPPI)/libusb.a: $(OBJS)
+	rm -f $@
+	$(AR) cr $@ $(OBJS)
 
 include $(CIRCLEHOME)/Rules.mk

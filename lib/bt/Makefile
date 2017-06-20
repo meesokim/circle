@@ -20,12 +20,12 @@
 
 CIRCLEHOME = ../..
 
-OBJS	= btsubsystem.o bttask.o \
-	  btlogicallayer.o btinquiryresults.o \
-	  bthcilayer.o btdevicemanager.o \
-	  btqueue.o btuarttransport.o
+OBJS	= $(RASPPI)/btsubsystem.o $(RASPPI)/bttask.o \
+	  $(RASPPI)/btlogicallayer.o $(RASPPI)/btinquiryresults.o \
+	  $(RASPPI)/bthcilayer.o $(RASPPI)/btdevicemanager.o \
+	  $(RASPPI)/btqueue.o $(RASPPI)/btuarttransport.o
 
-libbluetooth.a: $(OBJS)
+$(RASPPI)/libbluetooth.a: $(OBJS)
 	rm -f $@
 	$(AR) cr $@ $(OBJS)
 
@@ -36,7 +36,7 @@ include $(CIRCLEHOME)/Rules.mk
 %.h: %.hcd
 	./converttool -b $< > $@
 
-btdevicemanager.o: BCM43430A1.h
+$(RASPPI)/btdevicemanager.o: BCM43430A1.h
 
 BCM43430A1.h: converttool
 

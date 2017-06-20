@@ -13,16 +13,16 @@ CIRCLEHOME = ../..
 INCLUDE = -I$(CIRCLEHOME)/addon
 
 #OBJS	= main.o kernel.o
-OBJS = main.o kernel.o Z80SPC.o spcall.o MC6847.o AY8910.o pwmsound.o tap.o samsung.bmp.o 
+OBJS = $(RASPPI)/main.o $(RASPPI)/kernel.o $(RASPPI)/Z80SPC.o $(RASPPI)/spcall.o $(RASPPI)/MC6847.o $(RASPPI)/AY8910.o $(RASPPI)/pwmsound.o $(RASPPI)/tap.o $(RASPPI)/samsung.bmp.o 
 
-LIBS =$(CIRCLEHOME)/addon/ugui/libugui.a \
-	  $(CIRCLEHOME)/addon/SDCard/libsdcard.a \
-	  $(CIRCLEHOME)/lib/usb/libusb.a \
-	  $(CIRCLEHOME)/lib/input/libinput.a \
-	  $(CIRCLEHOME)/lib/fs/libfs.a \
-	  $(CIRCLEHOME)/lib/fs/fat/libfatfs.a \
-	  $(CIRCLEHOME)/lib/fs/libfs.a \
-	  $(CIRCLEHOME)/lib/$(LIBCIRCLE).a 
+LIBS =$(CIRCLEHOME)/addon/ugui/$(RASPPI)/libugui.a \
+	  $(CIRCLEHOME)/addon/SDCard/$(RASPPI)/libsdcard.a \
+	  $(CIRCLEHOME)/lib/usb/$(RASPPI)/libusb.a \
+	  $(CIRCLEHOME)/lib/input/$(RASPPI)/libinput.a \
+	  $(CIRCLEHOME)/lib/fs/$(RASPPI)/libfs.a \
+	  $(CIRCLEHOME)/lib/fs/fat/$(RASPPI)/libfatfs.a \
+	  $(CIRCLEHOME)/lib/fs/$(RASPPI)/libfs.a \
+	  $(CIRCLEHOME)/lib/$(RASPPI)/$(LIBCIRCLE).a 
 
 EXTRACLEAN = sound.h samsung.bmp.c tap.c
 
@@ -37,7 +37,7 @@ $(BMP).bmp.o: $(BMP).bmp
 sound.h: sound.h.gz
 	gunzip -c sound.h.gz > sound.h
 
-tap.o: $(TAP_FILE)
+$(RASPPI)/tap.o: $(TAP_FILE)
 	tap2c $(TAP_FILE) > tap.c
 	$(CC) $(CFLAGS) -c -o $@ tap.c
 

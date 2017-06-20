@@ -4,9 +4,9 @@
 
 CIRCLEHOME = ../..
 
-OBJS	= ugui.o uguicpp.o
+OBJS	= $(RASPPI)/ugui.o $(RASPPI)/uguicpp.o
 
-libugui.a: $(OBJS)
+$(RASPPI)/libugui.a: $(OBJS)
 	rm -f $@
 	$(AR) cr $@ $(OBJS)
 

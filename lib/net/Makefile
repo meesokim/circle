@@ -20,17 +20,18 @@
 
 CIRCLEHOME = ../..
 
-OBJS	= netsubsystem.o nettask.o socket.o \
-	  transportlayer.o networklayer.o linklayer.o netdevlayer.o arphandler.o \
-	  icmphandler.o routecache.o \
-	  netconnection.o udpconnection.o \
-	  tcpconnection.o retransmissionqueue.o retranstimeoutcalc.o tcprejector.o \
-	  netconfig.o ipaddress.o netqueue.o checksumcalculator.o \
-	  dnsclient.o ntpclient.o \
-	  dhcpclient.o ntpdaemon.o httpdaemon.o tftpdaemon.o
 
-libnet.a: $(OBJS)
-	rm -f libnet.a
-	$(AR) cr libnet.a $(OBJS)
+OBJS	= $(RASPPI)/netsubsystem.o $(RASPPI)/nettask.o $(RASPPI)/socket.o \
+	  $(RASPPI)/transportlayer.o $(RASPPI)/networklayer.o $(RASPPI)/linklayer.o $(RASPPI)/netdevlayer.o $(RASPPI)/arphandler.o \
+	  $(RASPPI)/icmphandler.o $(RASPPI)/routecache.o \
+	  $(RASPPI)/netconnection.o $(RASPPI)/udpconnection.o \
+	  $(RASPPI)/tcpconnection.o $(RASPPI)/retransmissionqueue.o $(RASPPI)/retranstimeoutcalc.o $(RASPPI)/tcprejector.o \
+	  $(RASPPI)/netconfig.o $(RASPPI)/ipaddress.o $(RASPPI)/netqueue.o $(RASPPI)/checksumcalculator.o \
+	  $(RASPPI)/dnsclient.o $(RASPPI)/ntpclient.o \
+	  $(RASPPI)/dhcpclient.o $(RASPPI)/ntpdaemon.o $(RASPPI)/httpdaemon.o $(RASPPI)/tftpdaemon.o
+
+$(RASPPI)/libnet.a: $(OBJS)
+	rm -f $@
+	$(AR) cr $@ $(OBJS)
 
 include $(CIRCLEHOME)/Rules.mk

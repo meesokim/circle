@@ -4,9 +4,9 @@
 
 CIRCLEHOME = ../..
 
-OBJS	= emmc.o
+OBJS	= $(RASPPI)/emmc.o
 
-libsdcard.a: $(OBJS)
+$(RASPPI)/libsdcard.a: $(OBJS)
 	rm -f $@
 	$(AR) cr $@ $(OBJS)
 

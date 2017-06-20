@@ -30,7 +30,15 @@ cd ..
 
 cd bt
 make $1 $2 || exit
-cd ..
+cd ../..
+
+cd addon/ugui
+make $1 $2 || exit
+cd ../..
+
+cd addon/SDCard
+make $1 $2 || exit
+cd ../..
 
 cd ..
 

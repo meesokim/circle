@@ -18,15 +18,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-OBJS	= actled.o alloc.o bcmmailbox.o bcmpropertytags.o gpiopin.o gpiopinfiq.o libhelper.o libstub.o \
-	  memory.o new.o purecall.o synchronize.o sysinit.o timer.o util.o util_fast.o \
-	  bcmframebuffer.o device.o koptions.o pagetable.o screen.o nulldevice.o \
-	  assert.o chargenerator.o debug.o devicenameservice.o logger.o serial.o string.o \
-	  delayloop.o exceptionhandler.o exceptionstub.o interrupt.o \
-	  gpiomanager.o gpioclock.o dmachannel.o pwmsounddevice.o pwmsoundbasedevice.o pwmoutput.o tracer.o \
-	  i2cmaster.o i2cslave.o spimaster.o spimasterdma.o virtualgpiopin.o machineinfo.o \
-	  multicore.o spinlock.o bcmrandom.o cache-v7.o cputhrottle.o \
-	  ptrarray.o ptrlist.o time.o libstub.o
+OBJS	= $(RASPPI)/actled.o $(RASPPI)/alloc.o $(RASPPI)/bcmmailbox.o $(RASPPI)/bcmpropertytags.o $(RASPPI)/gpiopin.o $(RASPPI)/gpiopinfiq.o $(RASPPI)/libhelper.o $(RASPPI)/libstub.o \
+	  $(RASPPI)/memory.o $(RASPPI)/new.o $(RASPPI)/purecall.o $(RASPPI)/synchronize.o $(RASPPI)/sysinit.o $(RASPPI)/timer.o $(RASPPI)/util.o $(RASPPI)/util_fast.o \
+	  $(RASPPI)/bcmframebuffer.o $(RASPPI)/device.o $(RASPPI)/koptions.o $(RASPPI)/pagetable.o $(RASPPI)/screen.o $(RASPPI)/nulldevice.o \
+	  $(RASPPI)/assert.o $(RASPPI)/chargenerator.o $(RASPPI)/debug.o $(RASPPI)/devicenameservice.o $(RASPPI)/logger.o $(RASPPI)/serial.o $(RASPPI)/string.o \
+	  $(RASPPI)/delayloop.o $(RASPPI)/exceptionhandler.o $(RASPPI)/exceptionstub.o $(RASPPI)/interrupt.o \
+	  $(RASPPI)/gpiomanager.o $(RASPPI)/gpioclock.o $(RASPPI)/dmachannel.o $(RASPPI)/pwmsounddevice.o $(RASPPI)/pwmsoundbasedevice.o $(RASPPI)/pwmoutput.o $(RASPPI)/tracer.o \
+	  $(RASPPI)/i2cmaster.o $(RASPPI)/i2cslave.o $(RASPPI)/spimaster.o $(RASPPI)/spimasterdma.o $(RASPPI)/virtualgpiopin.o $(RASPPI)/machineinfo.o \
+	  $(RASPPI)/multicore.o $(RASPPI)/spinlock.o $(RASPPI)/bcmrandom.o $(RASPPI)/cache-v7.o $(RASPPI)/cputhrottle.o \
+	  $(RASPPI)/ptrarray.o $(RASPPI)/ptrlist.o $(RASPPI)/time.o $(RASPPI)/libstub.o
 
 ifeq ($(strip $(DEPTH)), 8)
 LIBCIRCLE = libcircle8
@@ -34,12 +34,12 @@ else
 LIBCIRCLE = libcircle
 endif
 
-all: startup.o $(LIBCIRCLE).a
+all: $(RASPPI)/startup.o $(RASPPI)/$(LIBCIRCLE).a
 
-startup.o: startup.S
-libstub.o: libstub.S
+$(RASPPI)/startup.o: startup.S
+$(RASPPI)/libstub.o: libstub.S
 
-$(LIBCIRCLE).a: $(OBJS)
+$(RASPPI)/$(LIBCIRCLE).a: $(OBJS)
 	rm -f $@
 	$(AR) cr $@ $(OBJS)
 
