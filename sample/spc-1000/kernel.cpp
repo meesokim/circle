@@ -31,6 +31,8 @@ long _sprintf(char *buf, char *format, ...);
 char *xtoa( char *a, unsigned int x, int opt);
 void SetPalette(int, int, int, int);
 unsigned char *video_get_vbp(int i);
+void tms9918_render_line(tms9918 vdp);
+char vdp_buffer[256*192];
 #ifdef __cplusplus
  }
 #endif
@@ -196,6 +198,7 @@ int check_tap_file(char *str)
 void SetPalette(int idx, int r, int g, int b)
 {
 	s_pThis->SetPalette(idx, r, g, b);
+	
 }
 
 void CKernel::seletape()
@@ -496,11 +499,14 @@ TShutdownMode CKernel::Run (void)
 			{
 				if (vdp != 0 && vdp->show)
 				{
-					char *p = (char *)m_Framebuffer.GetBuffer();
-					tms9918_render_line(vdp);
+					char *p = (char *)m_Framebuffer.GetBuffer()+320*(240-192)/2;
 					for (int i = 0; i < 192; i++)
 					{
+						vdp->scanline = i;
+						tms9918_render_line(vdp);
+						//memset(video_get_vbp(i), 34, 256);
 						memcpy(p+(320-256)/2, video_get_vbp(i), 256);
+						//memset(p+(320-256)/2, 34, 256);
 						p += 320;
 					}
 				} else
@@ -524,11 +530,11 @@ TShutdownMode CKernel::Run (void)
 			}
 			ay8910.Loop8910(&spcsys.ay8910, 1);
 			ticks = m_Timer.GetClockTicks() - ticks;
-			if (!spcsys.cas.read && !spcsys.turbo)
+			if (!spcsys.cas.read && !spcsys.turbo && ticks < WAITTIME)
 				m_Timer.usDelay(WAITTIME - (ticks < WAITTIME ? ticks : WAITTIME));
 			spcsys.cas.read = 0;
 			//m_Timer.usDelay(ticks);
-			ticks = m_Timer.GetClockTicks();
+			ticks = m_Timer.GetClockTicks() - (ticks > WAITTIME ? ticks - WAITTIME : 0);
 			if (frame%1000  == 0)
 			{
 				//printf ("Address: %04x)", R->PC);
@@ -553,20 +559,24 @@ void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned cha
 			if (RawKeys[0] == 0x4c)
 				s_pThis->reset();
 		}
-		if ((ucModifiers & 0x8) && files > 0) {
-			if (RawKeys[0] == 0x50) {
-				tapidx -= 1;
-				if (tapidx < 0)
-					tapidx = files - 1;
-				s_pThis->seletape();
-				return;
-			} else if (RawKeys[0] == 0x4f) {
-				tapidx += 1;
-				if (tapidx == files)
-					tapidx = 0;
-				s_pThis->seletape();
-				return;
-			} else if (RawKeys[0] == 0x44) {
+		if ((ucModifiers & 0x8)) {
+			if (files > 0)
+			{
+				if (RawKeys[0] == 0x50) {
+					tapidx -= 1;
+					if (tapidx < 0)
+						tapidx = files - 1;
+					s_pThis->seletape();
+					return;
+				} else if (RawKeys[0] == 0x4f) {
+					tapidx += 1;
+					if (tapidx == files)
+						tapidx = 0;
+					s_pThis->seletape();
+					return;
+				}
+			}
+			if (RawKeys[0] == 0x44) {
 				s_pThis->toggle_turbo();
 				return;
 			} else if (RawKeys[0] == 0x52) {
@@ -574,6 +584,9 @@ void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned cha
 				return;
 			} else if (RawKeys[0] == 0x51) {
 				s_pThis->volume(-1);
+				return;
+			} else if (RawKeys[0] == 0x2B) {
+				 vdp->show = !vdp->show;
 				return;
 			}
 		}

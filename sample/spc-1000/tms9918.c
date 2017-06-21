@@ -30,11 +30,11 @@ void *calloc(int nmemb, int size)
 	return ret;
 }
 
-char vdp_buffer[256*192];
+extern char vdp_buffer[];
 
 unsigned char *video_get_vbp(int i)
 {
-	return vdp_buffer + i * 256;
+	return &vdp_buffer[i * 256];
 }
 
 void video_display_buffer()
@@ -46,7 +46,7 @@ void video_setpal(int num, int r[], int g[], int b[])
 {
 	for(int i = 0; i < num; i++)
 	{
-		SetPalette(i+32, r[0], g[0], b[0]);
+		SetPalette(i+32, r[i], g[i], b[i]);
 	}
 }
 
@@ -90,6 +90,8 @@ unsigned char tms9918_readport1(tms9918 vdp)
 
 void tms9918_writeport0(tms9918 vdp, unsigned char data)
 {
+	if (!vdp->show)
+		vdp->show = 1;
     vdp->readahead = data;
     vdp->memory[vdp->address++] = data;
     vdp->address &= 0x3fff;

@@ -94,6 +94,7 @@ public:
 	static void KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned char RawKeys[6]);
 	void SetPalette(int idx, int r, int g, int b) {
 		m_Screen.SetPalette(idx, (u32)COLOR32(r, g, b, 0xff));
+		m_Screen.UpdatePalette();
 	}
 	//static CKernel *s_pThis;
 	static int printf(const char *format, ...);
