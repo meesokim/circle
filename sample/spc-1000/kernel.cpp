@@ -25,9 +25,12 @@ extern "C" {
 #include "mc6847.h"
 #include "spcall.h"
 #include "spckey.h"
+#include "tms9918.h"
 int printf(const char *format, ...);
 long _sprintf(char *buf, char *format, ...);
- char *xtoa( char *a, unsigned int x, int opt);
+char *xtoa( char *a, unsigned int x, int opt);
+void SetPalette(int, int, int, int);
+unsigned char *video_get_vbp(int i);
 #ifdef __cplusplus
  }
 #endif
@@ -43,8 +46,7 @@ long _sprintf(char *buf, char *format, ...);
 
 //#define SOUND_SAMPLES		(sizeof Sound / sizeof Sound[0] / SOUND_CHANNELS)
 
-#define PARTITION1	"emmc1"
-#define PARTITION   "emmc1-1"
+#define PARTITION	"emmc1-1"
 #define FILENAME	"circle.txt"
 
 extern char tap0[];
@@ -158,6 +160,7 @@ typedef struct
 } VC_AUDIO_MSG_T;
 
 static VC_AUDIO_MSG_T audio;
+static tms9918 vdp;
 
 SPCSystem spcsys;
 
@@ -189,6 +192,12 @@ int check_tap_file(char *str)
 		return 2;
 	return 0;
 }
+
+void SetPalette(int idx, int r, int g, int b)
+{
+	s_pThis->SetPalette(idx, r, g, b);
+}
+
 void CKernel::seletape()
 {
 	memset(spcsys.cas.title, 0, 256);
@@ -340,6 +349,7 @@ void CKernel::reset()
 	reset_flag = 1;
 	spcsys.cas.lastTime = 0;
 	spcsys.turbo = 0;
+	vdp = tms9918_create();
 	return;
 }
 
@@ -388,10 +398,6 @@ TShutdownMode CKernel::Run (void)
 	int perc;
 	tappos = 0;
 	CDevice *pPartition = m_DeviceNameService.GetDevice (PARTITION, TRUE);
-	if (pPartition == 0)
-	{
-		pPartition = m_DeviceNameService.GetDevice (PARTITION1, TRUE);
-	}
 	if (pPartition == 0)
 	{
 		m_Logger.Write (FromKernel, LogPanic, "Partition not found: %s", PARTITION);
@@ -488,7 +494,17 @@ TShutdownMode CKernel::Run (void)
 			}
 			if (frame%33 == 0)
 			{
-				Update6847(spcsys.GMODE, m_Framebuffer.GetBuffer());
+				if (vdp != 0 && vdp->show)
+				{
+					char *p = (char *)m_Framebuffer.GetBuffer();
+					tms9918_render_line(vdp);
+					for (int i = 0; i < 192; i++)
+					{
+						memcpy(p+(320-256)/2, video_get_vbp(i), 256);
+						p += 320;
+					}
+				} else
+					Update6847(spcsys.GMODE, m_Framebuffer.GetBuffer());
 				if (spcsys.cas.read)
 				{
 					perc = tappos * 100 / tapsize;
@@ -629,6 +645,14 @@ void OutZ80(register word Port,register byte Value)
 		printf("GMode:%02X\n", Value);
 #endif
 	}
+	else if ((Port & 0xD860) == 0xD860)
+	{
+		if (Port & 1)
+			tms9918_writeport1(vdp, Value);
+		else
+			tms9918_writeport0(vdp, Value);
+			
+	}
 	else if ((Port & 0xE000) == 0x6000) // SMODE
 	{
 		if (spcsys.cas.button != CAS_STOP)
@@ -703,6 +727,12 @@ byte InZ80(register word Port)
 	} else if ((Port & 0xE000) == 0x0000) // VRAM reading
 	{
 		return spcsys.VRAM[Port];
+	} else if ((Port & 0xD860) == 0xD860)
+	{
+		if (Port & 1)
+			return tms9918_readport1(vdp);
+		else
+			return tms9918_readport0(vdp);
 	}	else if ((Port & 0xFFFE) == 0x4000) // PSG
 	{
 		byte retval = 0x1f;
