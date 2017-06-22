@@ -747,7 +747,7 @@ byte InZ80(register word Port)
 	} else if ((Port & 0xE000) == 0x0000) // VRAM reading
 	{
 		return spcsys.VRAM[Port];
-	} else if ((Port & 0xD860) == 0xD860)
+	} else if ((Port & 1<<11))
 	{
 		if (Port & 1)
 			return tms9918_readport1(vdp);
