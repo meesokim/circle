@@ -15,7 +15,7 @@ INCLUDE = -I$(CIRCLEHOME)/addon
 #OBJS	= main.o kernel.o
 OBJS =  $(RASPPI)/main.o $(RASPPI)/kernel.o $(RASPPI)/Z80SPC.o $(RASPPI)/spcall.o \
 		$(RASPPI)/MC6847.o $(RASPPI)/AY8910.o $(RASPPI)/pwmsound.o $(RASPPI)/tap.o \
-		$(RASPPI)/samsung.bmp.o $(RASPPI)/tms9918.o
+		samsung.bmp.o $(RASPPI)/tms9918.o
 
 LIBS =$(CIRCLEHOME)/addon/ugui/$(RASPPI)/libugui.a \
 	  $(CIRCLEHOME)/addon/SDCard/$(RASPPI)/libsdcard.a \
@@ -34,12 +34,12 @@ include ../Rules.mk
 
 $(BMP).bmp.o: $(BMP).bmp
 	bmp2bin $(BMP).bmp
-	$(CC) $(CFLAGS) -c -o $(BMP).bmp.o $(BMP).bmp.c
+	$(CC) $(CFLAGS) -c -o $@ $(BMP).bmp.c
 
 sound.h: sound.h.gz
 	gunzip -c sound.h.gz > sound.h
 
-tap.o: $(TAP_FILE)
+$(RASPPI)/tap.o: $(TAP_FILE)
 	tap2c $(TAP_FILE) > tap.c
 	$(CC) $(CFLAGS) -c -o $@ tap.c
 

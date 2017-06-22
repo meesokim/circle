@@ -49,6 +49,7 @@ char vdp_buffer[256*192];
 //#define SOUND_SAMPLES		(sizeof Sound / sizeof Sound[0] / SOUND_CHANNELS)
 
 #define PARTITION	"emmc1-1"
+#define PARTITION0  "emmc1"
 #define FILENAME	"circle.txt"
 
 extern char tap0[];
@@ -353,6 +354,7 @@ void CKernel::reset()
 	spcsys.cas.lastTime = 0;
 	spcsys.turbo = 0;
 	vdp = tms9918_create();
+	vdp->show = 0;
 	return;
 }
 
@@ -402,6 +404,8 @@ TShutdownMode CKernel::Run (void)
 	tappos = 0;
 	CDevice *pPartition = m_DeviceNameService.GetDevice (PARTITION, TRUE);
 	if (pPartition == 0)
+		pPartition = m_DeviceNameService.GetDevice (PARTITION0, TRUE);
+	if (pPartition == 0)
 	{
 		m_Logger.Write (FromKernel, LogPanic, "Partition not found: %s", PARTITION);
 	}
@@ -414,7 +418,7 @@ TShutdownMode CKernel::Run (void)
 	m_GUI.Initialize();
 	m_GUI.ShowMouse(false);
 	UG_FontSelect(&FONT_8X12);
-	tapsize = strlen(tap0);
+	tapsize = strlen(tap0) + 1000;
 	CString Message;
 	Uint8 fb[320*240];
 	m_Framebuffer.SetBuffer(fb);
@@ -497,7 +501,7 @@ TShutdownMode CKernel::Run (void)
 			}
 			if (frame%33 == 0)
 			{
-				if (vdp != 0 && vdp->show)
+				if (vdp != 0 && vdp->show == 1)
 				{
 					char *p = (char *)m_Framebuffer.GetBuffer()+320*(240-192)/2;
 					for (int i = 0; i < 192; i++)
@@ -559,7 +563,7 @@ void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned cha
 			if (RawKeys[0] == 0x4c)
 				s_pThis->reset();
 		}
-		if ((ucModifiers & 0x8)) {
+		if ((ucModifiers == 0x8 || ucModifiers == 0x40)) {
 			if (files > 0)
 			{
 				if (RawKeys[0] == 0x50) {
@@ -586,7 +590,10 @@ void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned cha
 				s_pThis->volume(-1);
 				return;
 			} else if (RawKeys[0] == 0x2B) {
-				 vdp->show = !vdp->show;
+				if (vdp->show == 1) 
+					vdp->show = -1;
+				else if (vdp->show == -1)
+					vdp->show = 1;
 				return;
 			}
 		}
@@ -633,10 +640,10 @@ int ReadVal(void)
 	}
 	c = tap[tappos++];
 	spcsys.cas.read++;
-	if (c == 0)
+	if (tappos > tapsize)
 		tappos = 0;
 //	sprintf(s_pThis->title, "%d %c\r", tappos, c);
-	return c-'0';
+	return (c == '1' ? 1 : 0);
 }
 
 void OutZ80(register word Port,register byte Value)
@@ -794,7 +801,7 @@ byte InZ80(register word Port)
 }
 
 //#define STONE (21/48000*4000000) // 21 sample * 48000Hz 1792
-#define STONE (56*32) // 21 sample * 48000Hz 1792
+#define STONE (57*32) // 21 sample * 48000Hz 1792
 #define LTONE (STONE*2)
 
 int CasRead(CassetteTape *cas)

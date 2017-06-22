@@ -90,7 +90,7 @@ unsigned char tms9918_readport1(tms9918 vdp)
 
 void tms9918_writeport0(tms9918 vdp, unsigned char data)
 {
-	if (!vdp->show)
+	if (vdp->show == 0)
 		vdp->show = 1;
     vdp->readahead = data;
     vdp->memory[vdp->address++] = data;
