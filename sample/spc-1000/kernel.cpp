@@ -563,7 +563,7 @@ void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned cha
 			if (RawKeys[0] == 0x4c)
 				s_pThis->reset();
 		}
-		if ((ucModifiers == 0x8 || ucModifiers == 0x40)) {
+		if ((ucModifiers == 0x8 || ucModifiers == 0x40 || ucModifiers == 0x10)) {
 			if (files > 0)
 			{
 				if (RawKeys[0] == 0x50) {
