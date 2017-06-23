@@ -204,9 +204,15 @@ void SetPalette(int idx, int r, int g, int b)
 
 void CKernel::seletape()
 {
+	char num[100];
 	memset(spcsys.cas.title, 0, 256);
-	strcat (spcsys.cas.title, itoa(spcsys.cas.title, tapidx));
-	strcat (spcsys.cas.title, ". ");
+	strcat(spcsys.cas.title, "[");
+	itoa(num, tapidx+1);
+	strcat (spcsys.cas.title, num);
+	strcat(spcsys.cas.title, "/");
+	itoa(num, files);
+	strcat (spcsys.cas.title, num);
+	strcat (spcsys.cas.title, "]. ");
 	if (taps[tapidx].chLongTitle[0] != 0)
 		strcat (spcsys.cas.title, taps[tapidx].chLongTitle);
 	else

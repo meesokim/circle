@@ -407,7 +407,7 @@ boolean CFATDirectory::FindNext (TDirentry *pEntry, TFindCurrentEntry *pCurrentE
 		}
 
 		boolean bFound = FALSE;
-		
+#if RASPPI==2		
 		if (pFATEntry->nAttributes == FAT_DIR_ATTR_LONG_NAME)
 		{
 			if((pFATEntry->Name[0] & 0x40))
@@ -420,42 +420,19 @@ boolean CFATDirectory::FindNext (TDirentry *pEntry, TFindCurrentEntry *pCurrentE
 				if (strlen(szLongFileName)>0)
 					strcpy(szLongFileNameTemp, szLongFileName);
 				LFN *stLFN = (LFN *)pFATEntry;
-				//memcpy(&stLFN, pFATEntry, 32);
 				#if 1
 				char szNamePart1[6] = {0};
 				wstrcpy(szNamePart1, stLFN->fileName_Part1, 5);
-//				szNamePart1[0] = (char)stLFN->fileName_Part1[0];
-//				szNamePart1[1] = (char)stLFN->fileName_Part1[1];
-//				szNamePart1[2] = (char)stLFN->fileName_Part1[2];
-//				szNamePart1[3] = (char)stLFN->fileName_Part1[3];
-//				szNamePart1[4] = (char)stLFN->fileName_Part1[4];
-//				szNamePart1[5] = '\0';
 				strcpy(szLongFileName, szNamePart1);
-				#else
-				for(int i = 0; i < 5; i++)
-					szLongFileName[pos++] = 0xff & stLFN->fileName_Part1[i];
-				#endif
 				FMark marker;
 				memcpy(&marker, stLFN->fileName_Part2, 12);
 				if((marker._Mark1 == 0xffffffff) && (marker._Mark1 == 0xffffffff) && (marker._Mark1 == 0xffffffff))
 				{
 				} else
 				{
-					#if 1
 					char szNamePart2[7] = {0};
 					wstrcpy(szNamePart2, stLFN->fileName_Part2, 6);
-					// szNamePart2[0] = (char)stLFN->fileName_Part2[0];
-					// szNamePart2[1] = (char)stLFN->fileName_Part2[1];
-					// szNamePart2[2] = (char)stLFN->fileName_Part2[2];
-					// szNamePart2[3] = (char)stLFN->fileName_Part2[3];
-					// szNamePart2[4] = (char)stLFN->fileName_Part2[4];
-					// szNamePart2[5] = (char)stLFN->fileName_Part2[5];
-					// szNamePart2[6] ='\0';
 					strcat(szLongFileName, szNamePart2);			
-					#else
-					for(int i = 0; i < 7; i++)
-						szLongFileName[pos++] = 0xff & stLFN->fileName_Part2[i];
-					#endif
 				}
 				if((stLFN->fileName_Part3[0] & stLFN->fileName_Part3[1] & stLFN->fileName_Part3[2] & stLFN->fileName_Part3[3]) == 0xff)
 				{
@@ -466,24 +443,20 @@ boolean CFATDirectory::FindNext (TDirentry *pEntry, TFindCurrentEntry *pCurrentE
 				}
 				else
 				{
-					#if 1
 					char szNamePart3[3]= {0};
-					wstrcpy(szNamePart3, stLFN->fileName_Part3, 2);
+					//wstrcpy(szNamePart3, stLFN->fileName_Part3, 2);
 					szNamePart3[0] = stLFN->fileName_Part3[0];
 					szNamePart3[1] = stLFN->fileName_Part3[2];
 					szNamePart3[2] ='\0';
 					strcat(szLongFileName, szNamePart3);
-					#else
-					szLongFileName[pos++] = 0xff & stLFN->fileName_Part3[0];
-					szLongFileName[pos++] = 0xff & stLFN->fileName_Part3[1];
-					szLongFileName[pos] = 0;
-					#endif
 				}
 				strcat(szLongFileName, szLongFileNameTemp);
 				//nMaxLFNEntryForFile--;
 			}
 		}
-		else if ( pFATEntry->Name[0] != FAT_DIR_NAME0_FREE && !(pFATEntry->nAttributes & (FAT_DIR_ATTR_VOLUME_ID | FAT_DIR_ATTR_DIRECTORY)))
+		else 
+#endif			
+		if ( pFATEntry->Name[0] != FAT_DIR_NAME0_FREE && !(pFATEntry->nAttributes & (FAT_DIR_ATTR_VOLUME_ID | FAT_DIR_ATTR_DIRECTORY)))
 		{
 			FAT2Name ((const char *) pFATEntry->Name, pEntry->chTitle);
 			
