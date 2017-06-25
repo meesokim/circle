@@ -59,6 +59,7 @@ CBcmRandomNumberGenerator::~CBcmRandomNumberGenerator (void)
 
 u32 CBcmRandomNumberGenerator::GetNumber (void)
 {
+	int count = 0;
 	s_SpinLock.Acquire ();
 
 	PeripheralEntry ();
@@ -66,6 +67,7 @@ u32 CBcmRandomNumberGenerator::GetNumber (void)
 	while ((read32 (ARM_HW_RNG_STATUS) >> 24) == 0)
 	{
 		// just wait
+		if (count++ > 1000) break;
 	}
 	
 	u32 nResult = read32 (ARM_HW_RNG_DATA);

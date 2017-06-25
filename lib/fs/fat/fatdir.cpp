@@ -420,7 +420,6 @@ boolean CFATDirectory::FindNext (TDirentry *pEntry, TFindCurrentEntry *pCurrentE
 				if (strlen(szLongFileName)>0)
 					strcpy(szLongFileNameTemp, szLongFileName);
 				LFN *stLFN = (LFN *)pFATEntry;
-				#if 1
 				char szNamePart1[6] = {0};
 				wstrcpy(szNamePart1, stLFN->fileName_Part1, 5);
 				strcpy(szLongFileName, szNamePart1);

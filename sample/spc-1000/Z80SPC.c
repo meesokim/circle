@@ -17,8 +17,6 @@
 /**     - 64KB IO space support added.                      **/
 /*************************************************************/
 
-extern int printf(const char *format, ...);
-
 #include "Z80.h"
 #include "Tables.h"
 
@@ -55,7 +53,7 @@ INLINE byte RdZ80(word A)
 #include "common.h"
 extern SPCSystem spcsys;
 extern Uint8 ROM[];
-inline void CpZ80(register word dstAddr, register word srcAddr)
+void CpZ80(register word dstAddr, register word srcAddr)
 {
     if (spcsys.IPLK)
         spcsys.RAM[dstAddr] = ROM[srcAddr & 0x7fff];

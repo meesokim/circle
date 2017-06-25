@@ -31,7 +31,7 @@ long _sprintf(char *buf, char *format, ...);
 char *xtoa( char *a, unsigned int x, int opt);
 void SetPalette(int, int, int, int);
 unsigned char *video_get_vbp(int i);
-void tms9918_render_line(tms9918 vdp);
+extern void tms9918_render_line(tms9918 vdp);
 char vdp_buffer[256*192];
 #ifdef __cplusplus
  }
@@ -204,7 +204,8 @@ void SetPalette(int idx, int r, int g, int b)
 
 void CKernel::seletape()
 {
-	char num[100];
+	char num[10];
+	memset(num, 0, 10);
 	memset(spcsys.cas.title, 0, 256);
 	strcat(spcsys.cas.title, "[");
 	itoa(num, tapidx+1);
@@ -212,7 +213,7 @@ void CKernel::seletape()
 	strcat(spcsys.cas.title, "/");
 	itoa(num, files);
 	strcat (spcsys.cas.title, num);
-	strcat (spcsys.cas.title, "]. ");
+	strcat (spcsys.cas.title, "] ");
 	if (taps[tapidx].chLongTitle[0] != 0)
 		strcat (spcsys.cas.title, taps[tapidx].chLongTitle);
 	else
@@ -388,6 +389,11 @@ void CKernel::toggle_turbo()
 	spcsys.turbo = !spcsys.turbo;
 }
 
+void CKernel::toggle_motor()
+{
+	spcsys.cas.motor = spcsys.cas.motor ? 0 : 1;
+}
+
 void CKernel::volume(int i)
 {
 	if (i > 0 && spcsys.volume < 10)
@@ -480,12 +486,13 @@ TShutdownMode CKernel::Run (void)
 #endif
 	Z80 *R = &spcsys.Z80R;	
 	reset_flag = 1;
+	pticks = ticks = m_Timer.GetClockTicks()/1000;
 	while(1)
 	{
 		if (reset_flag) {
 			ResetZ80(R);
 			R->ICount = I_PERIOD;
-			pticks = ticks = m_Timer.GetClockTicks();
+			pticks = ticks = m_Timer.GetClockTicks()/1000;
 			spcsys.cycles = 0;	
 			reset_flag = 0;
 		}
@@ -495,9 +502,10 @@ TShutdownMode CKernel::Run (void)
 		if (R->ICount <= 0)
 		{
 			frame++;
+			ticks ++;
 			spcsys.tick++;		// advance spc tick by 1 msec
 			R->ICount += I_PERIOD;	// re-init counter (including compensation)
-			if (frame % 16 == 0)
+			if ((frame % 16 == 0))
 			{
 				if (R->IFF & IFF_EI)	// if interrupt enabled, call Z-80 interrupt routine
 				{
@@ -514,11 +522,10 @@ TShutdownMode CKernel::Run (void)
 					{
 						vdp->scanline = i;
 						tms9918_render_line(vdp);
-						//memset(video_get_vbp(i), 34, 256);
 						memcpy(p+(320-256)/2, video_get_vbp(i), 256);
-						//memset(p+(320-256)/2, 34, 256);
 						p += 320;
 					}
+					vdp->scanline = 0;
 				} else
 					Update6847(spcsys.GMODE, m_Framebuffer.GetBuffer());
 				if (spcsys.cas.read)
@@ -539,19 +546,13 @@ TShutdownMode CKernel::Run (void)
 				memcpy(m_Screen.GetBuffer(), m_Framebuffer.GetBuffer(), 320*240);
 			}
 			ay8910.Loop8910(&spcsys.ay8910, 1);
-			ticks = m_Timer.GetClockTicks() - ticks;
-			if (!spcsys.cas.read && !spcsys.turbo && ticks < WAITTIME)
-				m_Timer.usDelay(WAITTIME - (ticks < WAITTIME ? ticks : WAITTIME));
-			spcsys.cas.read = 0;
-			//m_Timer.usDelay(ticks);
-			ticks = m_Timer.GetClockTicks() - (ticks > WAITTIME ? ticks - WAITTIME : 0);
-			if (frame%1000  == 0)
+			if (!spcsys.cas.read && !spcsys.turbo && m_Timer.GetClockTicks()/1000 < ticks)
 			{
-				//printf ("Address: %04x)", R->PC);
-				//s_pThis->printf("%d, %d\n", spcsys.cycles-cycles, m_Timer.GetClockTicks() - time);
-				cycles = spcsys.cycles;
-				time = m_Timer.GetClockTicks();
-			}
+				while((m_Timer.GetClockTicks())/1000 < ticks); 
+			}			
+			ticks = m_Timer.GetClockTicks()/1000;
+			spcsys.cas.read = 0;
+//			ticks = m_Timer.GetClockTicks();// - (ticks > WAITTIME ? ticks - WAITTIME : 0);
 		}
 	}
 	return ShutdownHalt;
@@ -586,10 +587,7 @@ void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned cha
 					return;
 				}
 			}
-			if (RawKeys[0] == 0x44) {
-				s_pThis->toggle_turbo();
-				return;
-			} else if (RawKeys[0] == 0x52) {
+			if (RawKeys[0] == 0x52) {
 				s_pThis->volume(1);
 				return;
 			} else if (RawKeys[0] == 0x51) {
@@ -611,7 +609,13 @@ void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned cha
 					keyMatrix[map->keyMatIdx] &= ~ map->keyMask;
 			}
 	}
-
+	if (RawKeys[0] == 0x45) { // F12
+		s_pThis->toggle_motor();
+		return;
+	} else if (RawKeys[0] == 0x44) { // F11
+		s_pThis->toggle_turbo();
+		return;
+	}
 	for (unsigned i = 0; i < 6; i++)
 	{
 		if (RawKeys[i] != 0)
@@ -671,13 +675,15 @@ void OutZ80(register word Port,register byte Value)
 		printf("GMode:%02X\n", Value);
 #endif
 	}
-	else if ((Port & 0xD860) == 0xD860)
+	else if ((Port & 1 << 11))
 	{
+#if 1		
 		if (Port & 1)
 			tms9918_writeport1(vdp, Value);
 		else
 			tms9918_writeport0(vdp, Value);
-			
+#endif		
+		return;
 	}
 	else if ((Port & 0xE000) == 0x6000) // SMODE
 	{
@@ -755,10 +761,12 @@ byte InZ80(register word Port)
 		return spcsys.VRAM[Port];
 	} else if ((Port & 1<<11))
 	{
+#if 1
 		if (Port & 1)
 			return tms9918_readport1(vdp);
 		else
 			return tms9918_readport0(vdp);
+#endif
 	}	else if ((Port & 0xFFFE) == 0x4000) // PSG
 	{
 		byte retval = 0x1f;
@@ -943,7 +951,6 @@ char *itoa( char *a, int i)
 	}	
 	else
 		*a++ = '0';
-
 	return a;
 }
 

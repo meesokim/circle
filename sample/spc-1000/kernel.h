@@ -101,6 +101,7 @@ public:
 	void seletape();
 	void loadtape();
 	void toggle_turbo();
+	void toggle_motor();
 	void volume(int i);
 };
 

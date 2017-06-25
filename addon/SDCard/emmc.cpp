@@ -1469,7 +1469,7 @@ int CEMMCDevice::CardReset (void)
 
 	// At this point, we know the card is definitely an SD card, so will definitely
 	//  support SDR12 mode which runs at 25 MHz
-	SwitchClockRate (base_clock, SD_CLOCK_NORMAL);
+	SwitchClockRate (base_clock, SD_CLOCK_HIGH);
 
 	// A small wait before the voltage switch
 	usDelay (5000);

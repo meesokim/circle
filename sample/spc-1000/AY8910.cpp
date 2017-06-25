@@ -39,7 +39,7 @@ extern void UNLOCK_MUTEX(void *);
 }
 
 
-#define RNG_WARMUP_COUNT	(1<<31)
+#define RNG_WARMUP_COUNT	0x40000
 
 
 extern "C" {
@@ -76,6 +76,7 @@ CAY8910::CAY8910(CTimer *m_Timer) :
 {
 	this->m_Timer = m_Timer;
 	DevFreq = DEVFREQ;
+	m_Random.GetNumber();
 	SndQueueInit();
 }
  
@@ -115,7 +116,7 @@ void CAY8910::Reset8910(register AY8910 *D,int First)
   /* Silence all channels */
   for(J=0;J<AY8910_CHANNELS;J++)
   {
-    D->Freq[J]=D->Volume[J]=0;
+    D->Freq[J]=D->Volume[J]=0; 
     Sound(J+First,0,0);
   }
 }
@@ -470,19 +471,19 @@ void CAY8910::DSPCallBack(u32 *stream, int len)
 		}
 #endif
 		R1 = 0;
-		for (i = 0; i < 6; i++) // Tone Generation
+		for (i = 0; i < 3; i++) // Tone Generation
 		{
 			if (Interval[i] && Vol[i])
 			{
 				if (Phase[i] < (Interval[i]/2))
 				{
 					R1 += Vol[i];
-					//R1 = (R1 > 32767) ? 32767: R1;
+					R1 = (R1 > 32767) ? 32767: R1;
 				}
 				else if (Phase[i] >= (Interval[i]/2) && Phase[i] < Interval[i])
 				{
 					R1 -= Vol[i];
-					//R1 = (R1 < -32768) ? -32768: R1;
+					R1 = (R1 < -32768) ? -32768: R1;
 				}
 				Phase[i] ++;
 				if (Phase[i] >= Interval[i])
@@ -497,17 +498,17 @@ void CAY8910::DSPCallBack(u32 *stream, int len)
 			if (Interval[i] && Vol[i])
 			{
 				if (Phase[i] == 0)
-					NoiseInterval[i] = Interval[i] + (((150 * m_Random.GetNumber ()) / RNG_WARMUP_COUNT) - 75);
+					NoiseInterval[i] = Interval[i] + ((150* (m_Timer->GetClockTicks() %65536) / 65536) - 75);
 //					NoiseInterval[i] = Interval[i];// + (((150 * m_Random.GetNumber ()) / RNG_WARMUP_COUNT) - 75);
 				if (Phase[i] < (NoiseInterval[i]/2))
 				{
 					R1 += Vol[i];
-					//R1 = (R1 > 32767)? 32767: R1;
+					R1 = (R1 > 32767)? 32767: R1;
 				}
 				else if (Phase[i] >= (NoiseInterval[i]/2) && Phase[i] < NoiseInterval[i])
 				{
 					R1 -= Vol[i];
-					//R1 = (R1 < -32768)? -32768: R1;
+					R1 = (R1 < -32768)? -32768: R1;
 				}
 				Phase[i] ++;
 				if (Phase[i] >= NoiseInterval[i])
@@ -517,10 +518,12 @@ void CAY8910::DSPCallBack(u32 *stream, int len)
 				}
 			}
 		}
-		R1 = R1 / 16;
-		R1 = (R1 > 2047) ? 2047: R1;
-		R1 = (R1 < -2048) ? -2048: R1;
-		stream[J+0]=(0xFFF & (R1 + 2048));//&0x00FF;
+		R1 = (R1)>>4;
+		if (R1 < 0)
+			R1 = R1 | (1<<11);
+		else
+			R1 = R1 & (0x7FF);
+		stream[J+0]=(0xFFF & R1);//&0x00FF;
 		stream[J+1]=stream[J+0];
 	}
 

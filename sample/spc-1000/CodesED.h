@@ -229,7 +229,7 @@ case LDI:
 
 case LDIR:
   if (R->PC.W != prevPC) {
-    printf("PC:%04X, DE:%04X, HL:%04X, BC:%04X\n", R->PC.W-2, R->DE.W, R->HL.W, R->BC.W);
+    //printf("PC:%04X, DE:%04X, HL:%04X, BC:%04X\n", R->PC.W-2, R->DE.W, R->HL.W, R->BC.W);
     prevPC = R->PC.W;
   }
   do
