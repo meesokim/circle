@@ -47,7 +47,7 @@ $(RASPPI)/tap.o: $(TAP_FILE)
 	z80asm -fb -l -sa $< 
 spcall.c: spc-1000_all.bin spc-1000_ipl.bin
 	cat spc-1000_all.bin spc-1000_ipl.bin > spcall.rom
-	bin2c.py spcall.rom ROM
+	python bin2c.py spcall.rom ROM
 
 bootcode: bootcode.bin start.elf fixup.dat
 	wget https://github.com/raspberrypi/firmware/blob/master/boot/$<?raw=true -O $<	

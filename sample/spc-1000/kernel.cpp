@@ -486,15 +486,19 @@ TShutdownMode CKernel::Run (void)
 #endif
 	Z80 *R = &spcsys.Z80R;	
 	reset_flag = 1;
-	pticks = ticks = m_Timer.GetClockTicks()/1000;
+	pticks = ticks = m_Timer.GetClockTicks();
+	frame=0;
+	ticks=0;	
 	while(1)
 	{
 		if (reset_flag) {
 			ResetZ80(R);
 			R->ICount = I_PERIOD;
-			pticks = ticks = m_Timer.GetClockTicks()/1000;
+			pticks = m_Timer.GetClockTicks();
 			spcsys.cycles = 0;	
 			reset_flag = 0;
+			frame=0;
+			ticks=0;
 		}
 		count = R->ICount;
 		ExecZ80(R); // Z-80 emulation
@@ -546,11 +550,16 @@ TShutdownMode CKernel::Run (void)
 				memcpy(m_Screen.GetBuffer(), m_Framebuffer.GetBuffer(), 320*240);
 			}
 			ay8910.Loop8910(&spcsys.ay8910, 1);
-			if (!spcsys.cas.read && !spcsys.turbo && m_Timer.GetClockTicks()/1000 < ticks)
+			ticks = frame * 1000 - (m_Timer.GetClockTicks() - pticks);
+			if (spcsys.cas.read || spcsys.turbo)
 			{
-				while((m_Timer.GetClockTicks())/1000 < ticks); 
-			}			
-			ticks = m_Timer.GetClockTicks()/1000;
+				if (ticks > 0)
+					pticks -= ticks; 			
+			}
+			else if (ticks > 0)
+			{
+				m_Timer.usDelay(ticks);
+			}
 			spcsys.cas.read = 0;
 //			ticks = m_Timer.GetClockTicks();// - (ticks > WAITTIME ? ticks - WAITTIME : 0);
 		}
@@ -652,8 +661,13 @@ int ReadVal(void)
 	spcsys.cas.read++;
 	if (tappos > tapsize)
 		tappos = 0;
-//	sprintf(s_pThis->title, "%d %c\r", tappos, c);
+	sprintf(s_pThis->title, "%d%\r", tappos * 100 / tapsize);		
 	return (c == '1' ? 1 : 0);
+}
+
+void ReadNext(void)
+{
+	
 }
 
 void OutZ80(register word Port,register byte Value)
@@ -720,6 +734,10 @@ void OutZ80(register word Port,register byte Value)
 //			CasWrite(&spcsys.cas, Value & 0x01);
 //		}
 	}
+	else if (Port == 0x4003)
+	{
+		ReadNext();
+	}
 	else if ((Port & 0xFFFE) == 0x4000) // PSG
 	{
 
@@ -767,7 +785,10 @@ byte InZ80(register word Port)
 		else
 			return tms9918_readport0(vdp);
 #endif
-	}	else if ((Port & 0xFFFE) == 0x4000) // PSG
+	} else if (Port & 0x3)
+	{
+		return ReadVal() ? 0x80 : 0;
+	} else if ((Port & 0xFFFE) == 0x4000) // PSG
 	{
 		byte retval = 0x1f;
 		if (Port & 0x01) // Data
@@ -808,7 +829,7 @@ byte InZ80(register word Port)
 		} else if (Port & 0x02)
 		{
             retval = (ReadVal() == 1 ? retval | 0x80 : retval & 0x7f);
-		}
+		} 
 		return retval;
 	}
 	return 0;
@@ -831,7 +852,6 @@ int CasRead(CassetteTape *cas)
 		cas->rdVal = ReadVal();
 		cas->lastTime = cycles;
 		cas->bitTime = cas->rdVal ? (LTONE * 0.6) : (STONE * 0.9);
-		sprintf(s_pThis->title, "%d%\r", tappos * 100 / tapsize);		
 	}
 
 	switch (cas->rdVal)
