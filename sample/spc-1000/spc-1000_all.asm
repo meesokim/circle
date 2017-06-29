@@ -128,7 +128,7 @@ MSAVE:	DI
 SAVE:	PUSH	DE
 	PUSH	BC
 	PUSH	HL
-	LD	D,001h		;원래값은 002h
+	LD	D,002h		;원래값은 002h
 SAVE1:	LD	A,(HL)		;~
 	CALL	WRACC		;1BYTE WRITE
 	LD	A,080h		;8000H
@@ -154,7 +154,7 @@ SAVE0:	INC	HL
 	OR	A
 	JP	SAVE4
 ;
-SAVE2:	LD	B,10h
+SAVE2:	LD	B,000h
 SAVE3:	CALL	WRITES
 	DEC	B
 	JP	NZ,SAVE3
@@ -212,9 +212,9 @@ CLOAD7: LD	BC,04000h
 CLOAD0: CALL	EDGE
 	JP	C,CLOAD5
 	CALL	WAITR
-;	LD	A,040h
-;	IN	A,(1)	;IN A,(4001H)
-;	AND	080h
+	LD	A,040h
+	IN	A,(001h)	;IN A,(4001H)
+	AND	080h
 	JP	Z,CLOAD0
 	LD	D,H
 	LD	HL,00000h
@@ -299,9 +299,9 @@ MVRFYN: LD	BC,04000h
 MVRFY2: CALL	EDGE
 	JP	C,CLOAD5
 	CALL	WAITR
-;	LD	A,040h
-;	IN	A,(1)
-;	AND	080h
+	LD	A,040h
+	IN	A,(1)
+	AND	080h
 	JP	Z,MVRFY2
 	LD	D,H
 	POP	HL
@@ -330,6 +330,7 @@ MVRFY3: CALL	VBLOAD
 	LD	H,D
 	JP	MVRFYN
 ;
+EDGE:
 MVRFY4: LD	A,080h
 	IN	A,(0)		;IN A,(8000H)
 	AND	012h
@@ -337,8 +338,7 @@ MVRFY4: LD	A,080h
 	SCF
 	RET
 ;
-MVRFY5: 
-	LD	A,040h
+MVRFY5: LD	A,040h
 	IN	A,(1)		;IN A,(4001H)
 	AND	080h
 	JP	NZ,MVRFY4
@@ -350,18 +350,12 @@ MVRFY6: LD	A,080h
 	SCF
 	RET
 ;
-EDGE:
-MVRFY7: 
-	JP Z, MVRFY6
-	LD	A,040h
-	IN	A,(3)		;IN A,(4001H)
+MVRFY7: LD	A,040h
+	IN	A,(1)		;IN A,(4001H)
 	AND	080h
-	LD BC,04003h
-	LD A, 1
-	OUT (C), A
+	JP	Z,MVRFY6
 	RET
 ;
-	ORG 0259H
 VBLOAD: PUSH	BC
 	PUSH	DE
 	PUSH	HL
@@ -372,9 +366,9 @@ VBLOAD: PUSH	BC
 VBLOD1: CALL	EDGE
 	JP	C,VBLOD3
 	CALL	WAITR
-;	LD	A,040h
-;	IN	A,(1)		;IN A,(4001H)
-;	AND	080h
+	LD	A,040h
+	IN	A,(1)		;IN A,(4001H)
+	AND	080h
 	JP	Z,VBLOD2
 	PUSH	HL
 	LD	HL,(CKSMF1)
@@ -414,9 +408,9 @@ MKRD4:	LD	HL,(MKLEN)
 MKRD5:	CALL	EDGE
 	JP	C,MKRD3
 	CALL	WAITR
-;	LD	A,040h
-;	IN	A,(1)		;IN A,(4001H)
-;	AND	080h
+	LD	A,040h
+	IN	A,(1)		;IN A,(4001H)
+	AND	080h
 	JP	Z,MKRD4
 	DEC	H
 	JP	NZ,MKRD5
@@ -424,9 +418,9 @@ MKRD5:	CALL	EDGE
 MKRD2:	CALL	EDGE
 	JP	C,MKRD3
 	CALL	WAITR
-;	LD	A,040h
-;	IN	A,(1)		;IN A,(4001H)
-;	AND	080h
+	LD	A,040h
+	IN	A,(001h)	;IN A,(4001H)
+	AND	080h
 	JP	NZ,MKRD4
 	DEC	L
 	JP	NZ,MKRD2
@@ -437,7 +431,6 @@ MKRD3:	POP	HL
 	POP	BC
 	RET
 ;
-	ORG 2E0h
 MOTON:	PUSH	BC
 	PUSH	DE
 	PUSH	HL
@@ -569,9 +562,7 @@ SUM4:	DEC	H
 ;WAITR:	RET			;★원래는 이 자리가 3E
 ;	LD	E,D			;★원래는 LD A,90
 WAITR:
-	RET
-;	LD  A,1		; 원래는 90
-	RET
+	LD  A,90
 WAIT2:	DEC	A
 	JP	NZ,WAIT2
 	RET
@@ -580,17 +571,17 @@ WRITES: PUSH	AF
 	PUSH	BC
 	LD	BC,06000h
 	LD	A,(IO6000)
-;	SET	0,A
-;	OUT	(C),A
-;	PUSH	AF
-;	LD	A,60		;MSX는 38
-;	CALL	WAIT2
-;	POP	AF
+	SET	0,A
+	OUT	(C),A
+	PUSH	AF
+	LD	A,60		;MSX는 38
+	CALL	WAIT2
+	POP	AF
 	RES	0,A
 	OUT	(C),A
 	LD	(IO6000),A
-;	LD	A,55		;MSX는 45
-;	CALL	WAIT2
+	LD	A,55		;MSX는 45
+	CALL	WAIT2
 	POP	BC
 	POP	AF
 	RET
@@ -601,15 +592,15 @@ WRITEL: PUSH	AF
 	LD	A,(IO6000)
 	SET	0,A
 	OUT	(C),A
-;	PUSH	AF
-;	LD	A,120		;MSX는 83
-;	CALL	WAIT2
-;	POP	AF
-;	RES	0,A
-;	OUT	(C),A
+	PUSH	AF
+	LD	A,120		;MSX는 83
+	CALL	WAIT2
+	POP	AF
+	RES	0,A
+	OUT	(C),A
 	LD	(IO6000),A
-;	LD	A,115		;MSX는 92
-;	CALL	WAIT2
+	LD	A,115		;MSX는 92
+	CALL	WAIT2
 	POP	BC
 	POP	AF
 	RET
@@ -629,11 +620,11 @@ WRACC1: RLCA
 WRMRK:	PUSH	BC
 	PUSH	DE
 	LD	A,E
-	LD	BC,010h
+	LD	BC,055F0h
 	LD	DE,02828h
 	CP	0CCh
 	JP	Z,WMRK1
-	LD	BC,010h
+	LD	BC,02AF8h
 	LD	DE,01414h
 ;
 WMRK1:	CALL	WRITES
@@ -657,7 +648,6 @@ WMRK3:	CALL	WRITES
 ;    MON (MONITOR)
 ;
 ;
-	ORG 0450H 
 MONOP:	PUSH	HL
 	LD	(MONSTK),SP
 MONCOM: CALL	CR2
@@ -935,7 +925,6 @@ SCRNBC: LD	A,C		;SCREEN B,C
 	LD	D,(HL)
 	EX	DE,HL
 	DEC	A
-PATCH4:	
 	RLCA
 	RLCA
 	RLCA
@@ -2052,7 +2041,7 @@ KEYBFD: DEFB	000h
 	JR	KEYST2
 NEWKYS: CALL	NEWFLG
 	DEFB	021h		; LD HL,300
-REPTSW: DEFW	200		; auto repeat key duration
+REPTSW: DEFW	200
 KEYST2: LD	(REPETF),HL
 	LD	HL,NEWBUF
 	LD	D,0
@@ -2099,7 +2088,7 @@ FLASHD: DEFB	000h		;
 	AND	0FEh
 	LD	E,A
 	LD	A,(TICONT)
-FLASHC: SUB	0			; cursor blink time
+FLASHC: SUB	0
 	AND	010h
 	LD	A,001h
 	JR	Z,L0D28
@@ -2861,34 +2850,34 @@ CTRLTB: DEFW	NORET		;@
 
 BELLFG: DEFB	0		;CTRL-G
 ;
-COLORF: DEFB	0		; Color Flag
-GCOLOR: DEFB	0		; Graphic Color
-SCRLBF: DEFS	020h	; scroll buffer
-LINEF:  DEFS	65		; line return flag
+COLORF: DEFB	0
+GCOLOR: DEFB	0
+SCRLBF: DEFS	020h
+LINEF:  DEFS	65
 ;
-CKSMF1: DEFW	0		; checksum field
-CKSMF2: DEFW	0		; checksum field
+CKSMF1: DEFW	0
+CKSMF2: DEFW	0
 MKLEN:	DEFW	0
 ;
-IO6000: DEFB	0		; 6000H I/O data
-IO2000: DEFB	0		; 2000H I/O data
-DISFLG: DEFB	1		; output flag (console=1, printer=2)
-PRINTN: DEFB	0		; printer header
+IO6000: DEFB	0
+IO2000: DEFB	0
+DISFLG: DEFB	1
+PRINTN: DEFB	0
 ;
-CURX:	DEFB	0		; cursor X
-CURY:	DEFB	0		; cursor Y
-OLDBUF: DEFS	10		; keyboard matrix old buffer
-NEWBUF: DEFS	9		; keyboard matrix new buffer
-NEWMOD: DEFB	0FFh	; keyboard matrix mode flag
+CURX:	DEFB	0
+CURY:	DEFB	0
+OLDBUF: DEFS	10
+NEWBUF: DEFS	9
+NEWMOD: DEFB	0FFh
 ;
-LOCKMD: DEFB	0		; LOCK mode
-POINT1: DEFB	0		; key input buffer 
-POINT2: DEFB	0		; key input buffer 
-INKYBF: DEFS	040h	; key input buffer
-TABBUF: DEFS	32		; TAB flag
+LOCKMD: DEFB	0
+POINT1: DEFB	0
+POINT2: DEFB	0
+INKYBF: DEFS	040h
+TABBUF: DEFS	32
 ;
 ;
-FUNBUF: DEFB	5		; function definition
+FUNBUF: DEFB	5
 	DEFM	'AUTO'
 	DEFB	00Dh
 	DEFS	10
@@ -2931,7 +2920,7 @@ FUNBUF: DEFB	5		; function definition
 	DEFB	00Dh
 	DEFS	10
 ;
-KEYDT1: DEFW	0F500h		;8009  No Shift
+KEYDT1: DEFW	0F500h		;8009
 	DEFM	'-0;'		;'
 	DEFW	06F6Ch		;LO
 	DEFM	'9'		;9
@@ -2973,7 +2962,7 @@ KEYDT1: DEFW	0F500h		;8009  No Shift
 ;
 ;
 ;
-KEYDT2: DEFW	0FA00h	; Shift
+KEYDT2: DEFW	0FA00h
 	DEFM	'=0+LO)'
 
 	DEFW	0F900h
@@ -3016,7 +3005,7 @@ MTBYTE: DEFW	1		; 프로그램 크기
 MTADRS: DEFW	0		; 프로그램 저장번지
 MTEXEC: DEFW	0		; CP/M에서 시작번지
 PROTCT: DEFW	0		; 3A 00 이 들어있으면 베이직 자동실행
-	DEFS	01416h - $		; 102 BYTE
+	DEFS	102		; 102 BYTE
 
 ;
 ; HUDSON BASIC V1.0
@@ -3030,7 +3019,6 @@ COLDST: LD	DE,KEYBUF
 MESOFF: CALL	PRTSDC
 	LD	A,001h
 	LD	(MESOFF),A
-PATCH1:	
 	LD	HL,KEYBUF
 	LD	D,0FFh		;MEM.MAX
 L0014:
@@ -3074,7 +3062,6 @@ CONTDS: LD	A,B
 	CALL	ACCPRT
 	LD	A,(GMODEF)
 	CP	2
-PATCH6:	
 	CALL	NC,GRAPHI
 ;
 NMESOK: CALL	CR2
@@ -4146,7 +4133,6 @@ SCREEN: LD	C,L
 	LD	D,A
 	PUSH	BC
 	PUSH	DE
-PATCH5:	
 	CALL	GRAPH
 	POP	BC
 	CALL	SCRNBC
@@ -4274,7 +4260,7 @@ READ:	LD	C,L
 	LD	B,H
 	LD	HL,DATASK
 	LD	(READVC),HL
-	LD	HL,LNG+1
+	LD	HL,04528h
 	LD	(DATAFV),HL
 	LD	HL,00000h
 	LD	(DATAV1),HL
@@ -8825,7 +8811,7 @@ TPRDER: XOR	A
 	CALL	Z,NEW
 	JP	BREAK
 ;
-BLOAD:	CP	002h ; basic이면 TEXTST에 로딩
+BLOAD:	CP	002h
 	JR	NZ,MLLOAD
 	LD	HL,TEXTST
 	LD	(MTADRS),HL
@@ -10696,10 +10682,10 @@ STREXX: LD	HL,(INTFAC)
 ;
 CTBUF:	DEFW	$FLOAT
 	DEFW	$EDIT
-	DEFW	ADDDEG   ; $CONV hard coding
+	DEFW	05b4ah   ; $CONV hard coding
 	DEFW	00000h   ; $IOCS hard coding
 	DEFW	$ERTXT
-	DEFW	VSTART   ; $WORK hard coding 
+	DEFW	07a3bh   ; $WORK hard coding 
 	DEFW	LDIR1   ; $FUNC hard coding
 	DEFS	242
 USINGB: DEFS	26
@@ -10953,11 +10939,11 @@ CULAD0: LD	C,L
 	OUT	(C),E		;
 	LD	E,1
 	OR	A
-	JR	Z,PATCH2
+	JR	Z,L344A
 L3445:	RLC	E
 	DEC	A
 	JR	NZ,L3445
-PATCH2:	LD	A,(GCOLOR)
+L344A:	LD	A,(GCOLOR)
 	OR	A
 	JP	Z,PRESOK
 	DEC	A
@@ -10999,11 +10985,11 @@ CULAD1: LD	C,L
 	OUT	(C),D
 	LD	E,1
 	OR	A
-	JR	Z,PATCH3
+	JR	Z,L348F
 L348A:	RLC	E
 	DEC	A
 	JR	NZ,L348A
-PATCH3:	LD	A,(GCOLOR)
+L348F:	LD	A,(GCOLOR)
 	OR	A
 	JP	Z,PRESOK
 	DEC	A
@@ -19045,12 +19031,12 @@ DDEXPC: POP	HL
 WRKFC:	DEFS	8
 WRKFC1: DEFS	8
 ;    ORG 073A3H
-LDIR1:   	LD	HL,FLONE      	;!b
+LDIR1:   	LD	HL,06298h      	;!b
 LDIR8:   	LD	BC,00008h      	;
            	LDIR              	;
            	RET               	;
 
-ONEADD:   	LD	DE,FLONE      	;b
+ONEADD:   	LD	DE,06298h      	;b
            	JP	ADD        	;l
 L073B2h:   	EX	DE,HL          	;
            	LD	HL,00008h      	;!
@@ -19069,11 +19055,11 @@ B_SQR:     	XOR	A             	;
            	LD	DE,00008h      	;
            	PUSH	HL           	;
            	ADD	HL,DE         	;
-           	LD	(L073D1h+1),HL    	;"s
+           	LD	(073D2h),HL    	;"s
            	ADD	HL,DE         	;
-           	LD	(L073E4h+1),HL    	;"s
+           	LD	(073E5h),HL    	;"s
            	POP	HL            	;
-L073D1h:   	LD	DE,00000h      	;
+           	LD	DE,00000h      	;
            	PUSH	HL           	;
            	PUSH	DE           	;
            	CALL	LDIR8      	;s
@@ -19086,11 +19072,11 @@ L073D1h:   	LD	DE,00000h      	;
            	LD	(HL),A         	;w
 L073E2h:   	POP	HL            	;
            	PUSH	HL           	;
-L073E4h:  	LD	DE,00000h      	;
+           	LD	DE,00000h      	;
            	PUSH	DE           	;
            	CALL	LDIR8      	;s
            	POP	HL            	;
-           	LD	DE,(L073D1h+1)    	;[s
+           	LD	DE,(073D2h)    	;[s
            	CALL	DIV      	;p
            	CALL	ADD      	;l
            	DEC	(HL)          	;5
@@ -19176,9 +19162,9 @@ L0745Eh:   	PUSH	BC           	;
            	POP	BC            	;
            	RET               	;
 
-L07473h:   	LD	A,(HL)         	;~
+           	LD	A,(HL)         	;~
            	LD	C,H            	;L
-L07475h:  	ADD	A,B           	;
+           	ADD	A,B           	;
            	DEC	HL            	;+
 B_ATN:     	PUSH	BC           	;
            	INC	HL            	;#
@@ -19211,11 +19197,11 @@ L07488h:   	CALL	ONECMP      	;a
            	DEC	(HL)          	;5
            	JP	B_ABS          	;k
 L074ADh:   	LD	A,0FFh         	;>
-           	LD	(L07602h+1),A     	;2v
-           	LD	DE,L07473h      	;st
+           	LD	(07603h),A     	;2v
+           	LD	DE,07473h      	;st
            	CALL	CMP      	;a
            	JR	C,L07509h      	;8O
-           	LD	DE,L07475h      	;ut
+           	LD	DE,07475h      	;ut
            	CALL	CMP      	;a
            	PUSH	AF           	;
            	CALL	L073B2h      	;s
@@ -19231,24 +19217,24 @@ L074ADh:   	LD	A,0FFh         	;>
            	POP	DE            	;
            	CALL	DIV      	;p
            	CALL	L07509h      	;u
-           	LD	DE,SINTBL3      	;Jw
+           	LD	DE,0774Ah      	;Jw
            	JP	ADD        	;l
-L074E1h:   	LD	DE,L07501h      	;u
+L074E1h:   	LD	DE,07501h      	;u
            	CALL	MUL      	;o
            	CALL	ONEADD      	;s
            	EX	(SP),HL        	;
-           	LD	DE,L07501h      	;u
+           	LD	DE,07501h      	;u
            	CALL	SUB      	;k
            	POP	DE            	;
            	CALL	DIV      	;p
            	CALL	L07509h      	;u
            	INC	(HL)          	;4
-           	LD	DE,SINTBL3      	;Jw
+           	LD	DE,0774Ah      	;Jw
            	CALL	ADD      	;l
            	DEC	(HL)          	;5
            	RET               	;
 
-L07501h:   	LD	A,A            	;
+           	LD	A,A            	;
            	LD	D,H            	;T
            	INC	DE            	;
 L0E7CFh     EQU    0E7CFh
@@ -19257,14 +19243,14 @@ L0E7CFh     EQU    0E7CFh
            	SUB	B             	;
 L07509h:   	PUSH	BC           	;
            	PUSH	HL           	;
-           	LD	(L075F2h+1),HL    	;"u
+           	LD	(075F3h),HL    	;"u
            	LD	DE,00008h      	;
            	ADD	HL,DE         	;
-           	LD	(L075E2h+1),HL    	;"u
+           	LD	(075E3h),HL    	;"u
            	ADD	HL,DE         	;
            	LD	(L075C8h),HL    	;"u
            	ADD	HL,DE         	;
-           	LD	(L075DAh+1),HL    	;"u
+           	LD	(075DBh),HL    	;"u
            	EX	DE,HL          	;
            	POP	HL            	;
            	PUSH	HL           	;
@@ -19282,7 +19268,7 @@ L07509h:   	PUSH	BC           	;
            	DEC	A             	;=
            	CP	003h           	;
            	LD	B,A            	;G
-           	LD	HL,L076FAh      	;!v
+           	LD	HL,076FAh      	;!v
            	JP	Z,L075D5h      	;u
            	LD	B,00Ah         	;
            	JP	L075D5h        	;u
@@ -19290,7 +19276,7 @@ B_COS:     	PUSH	BC           	;
            	LD	A,(HL)         	;~
            	OR	A              	;
            	JP	Z,L07437h      	;7t
-           	LD	DE,SINTBL3      	;Jw
+           	LD	DE,0774Ah      	;Jw
            	DEC	(HL)          	;5
            	CALL	SUB      	;k
            	INC	(HL)          	;4
@@ -19303,10 +19289,10 @@ B_SIN:     	PUSH	BC           	;
            	RES	7,(HL)        	;
            	AND	080h          	;
            	CPL               	;/
-           	LD	(L07602h+1),A     	;2v
+           	LD	(07603h),A     	;2v
            	DEC	HL            	;+
            	CALL	L073B2h      	;s
-           	LD	HL,SINTBL3      	;!Jw
+           	LD	HL,0774Ah      	;!Jw
            	PUSH	DE           	;
            	CALL	LDIR8      	;s
            	POP	HL            	;
@@ -19324,9 +19310,9 @@ B_SIN:     	PUSH	BC           	;
            	CALL	CMP      	;a
            	JR	C,L0758Eh      	;8
            	CALL	SUB      	;k
-           	LD	A,(L07602h+1)     	;:v
+           	LD	A,(07603h)     	;:v
            	XOR	080h          	;
-           	LD	(L07602h+1),A     	;2v
+           	LD	(07603h),A     	;2v
 L0758Eh:   	EX	DE,HL          	;
            	DEC	(HL)          	;5
            	EX	DE,HL          	;
@@ -19336,18 +19322,18 @@ L0758Eh:   	EX	DE,HL          	;
            	CALL	SUB      	;k
            	INC	(HL)          	;4
            	CALL	B_ABS        	;k
-L0759Eh:   	LD	(L075F2h+1),HL    	;"u
+L0759Eh:   	LD	(075F3h),HL    	;"u
            	LD	DE,00008h      	;
            	ADD	HL,DE         	;
-           	LD	(L075E2h+1),HL    	;"u
+           	LD	(075E3h),HL    	;"u
            	ADD	HL,DE         	;
            	LD	(L075C8h),HL    	;"u
            	ADD	HL,DE         	;
-           	LD	(L075DAh+1),HL    	;"u
+           	LD	(075DBh),HL    	;"u
            	EX	DE,HL          	;
            	POP	HL            	;
            	PUSH	DE           	;
-           	LD	DE,SINTBL3      	;Jw
+           	LD	DE,0774Ah      	;Jw
            	CALL	CMP      	;a
            	JR	NC,L0761Bh     	;0`
            	POP	DE            	;
@@ -19369,18 +19355,18 @@ L075C8h:
 L075D5h:   	PUSH	BC           	;
            	PUSH	HL           	;
            	LD	HL,(L075C8h)    	;*u
-L075DAh:   	LD	DE,00000h      	;
+           	LD	DE,00000h      	;
            	CALL	MUL      	;o
            	POP	HL            	;
            	PUSH	HL           	;
-L075E2h:  	LD	DE,00000h      	;
+           	LD	DE,00000h      	;
            	PUSH	DE           	;
            	CALL	LDIR8      	;s
            	POP	HL            	;
            	LD	DE,(L075C8h)    	;[u
            	CALL	MUL      	;o
            	EX	DE,HL          	;
-L075F2h:   	LD	HL,00000h      	;!
+           	LD	HL,00000h      	;!
            	CALL	ADD      	;l
            	POP	HL            	;
            	LD	DE,00008h      	;
@@ -19389,7 +19375,7 @@ L075F2h:   	LD	HL,00000h      	;!
            	DJNZ	L075D5h      	;
            	POP	HL            	;
            	POP	BC            	;
-L07602h:	LD	A,000h         	;>
+           	LD	A,000h         	;>
            	INC	HL            	;#
            	XOR	(HL)          	;
            	CPL               	;/
@@ -19405,7 +19391,7 @@ L07613h:   	RET	NC            	;
 L07617h:   	CP	04Dh           	;M
            	JR	L07613h        	;
 L0761Bh:   	DEC	(HL)          	;5
-           	LD	DE,SINTBL3      	;Jw
+           	LD	DE,0774Ah      	;Jw
            	CALL	SUB      	;k
            	INC	(HL)          	;4
            	CALL	B_ABS        	;k
@@ -19423,31 +19409,31 @@ L0761Bh:   	DEC	(HL)          	;5
            	PUSH	DE           	;
            	CALL	LDIR1      	;s
            	LD	B,(IY+0)       	;F
-           	LD	HL,SINTBL2     	;!v
+           	LD	HL,076BAh      	;!v
 L07644h:   	JR	L075D5h        	;
 B_TAN:
            	PUSH	BC           	;
            	PUSH	HL           	;
            	LD	DE,00008h      	;
            	ADD	HL,DE         	;
-           	LD	(L0766Dh+1),HL    	;"nv
+           	LD	(0766Eh),HL    	;"nv
            	ADD	HL,DE         	;
-           	LD	(L07662h+1),HL    	;"cv
+           	LD	(07663h),HL    	;"cv
            	EX	DE,HL          	;
            	POP	HL            	;
            	PUSH	HL           	;
            	CALL	LDIR8      	;s
-           	LD	HL,(L0766Dh+1)    	;*nv
+           	LD	HL,(0766Eh)    	;*nv
            	EX	DE,HL          	;
            	POP	HL            	;
            	PUSH	HL           	;
            	CALL	LDIR8      	;s
-L07662h:   	LD	HL,00000h      	;!
+           	LD	HL,00000h      	;!
            	CALL	B_SIN        	;Wu
            	POP	DE            	;
            	PUSH	DE           	;
            	CALL	LDIR8      	;s
-L0766Dh:   	LD	HL,00000h      	;!
+           	LD	HL,00000h      	;!
            	CALL	B_COS        	;Eu
            	EX	DE,HL          	;
            	POP	HL            	;
@@ -19463,7 +19449,6 @@ SINTBL1:
 			DEFB 060h, 030h, 092h, 030h, 09Dh, 043h, 068h, 04Ch
 			DEFB 058h, 0D7h, 03Fh, 09Fh, 039h, 09Dh, 0C0h, 0F9h
 			DEFB 050h, 04Ah, 096h, 03Bh, 081h, 085h, 06Ah, 053h
-SINTBL2:
 			DEFB 080h, 080h, 000h, 000h, 000h, 000h, 000h, 000h
 			DEFB 07Ch, 02Ah, 0AAh, 0AAh, 0AAh, 0AAh, 0AAh, 0ABh
 			DEFB 077h, 0B6h, 00Bh, 060h, 0B6h, 00Bh, 060h, 0B7h
@@ -19472,7 +19457,7 @@ SINTBL2:
 			DEFB 064h, 00Fh, 076h, 0C7h, 07Fh, 0C6h, 0C4h, 0BEh
 			DEFB 05Ch, 0C9h, 0CBh, 0A5h, 046h, 003h, 0E4h, 0EAh
 			DEFB 054h, 057h, 03Fh, 09Fh, 039h, 09Dh, 0C0h, 0F9h
-L076FAh:	DEFB 07Fh, 0AAh, 0AAh, 0AAh, 0AAh, 0AAh, 0AAh, 0ABh
+			DEFB 07Fh, 0AAh, 0AAh, 0AAh, 0AAh, 0AAh, 0AAh, 0ABh
 			DEFB 07Eh, 04Ch, 0CCh, 0CCh, 0CCh, 0CCh, 0CCh, 0CDh
 			DEFB 07Eh, 092h, 049h, 024h, 092h, 049h, 024h, 093h
 			DEFB 07Dh, 063h, 08Eh, 038h, 0E3h, 08Eh, 038h, 0E4h
@@ -19482,7 +19467,7 @@ L076FAh:	DEFB 07Fh, 0AAh, 0AAh, 0AAh, 0AAh, 0AAh, 0AAh, 0ABh
 			DEFB 07Ch, 070h, 0F0h, 0F0h, 0F0h, 0F0h, 0F0h, 0F1h
 			DEFB 07Ch, 0D7h, 094h, 035h, 0E5h, 00Dh, 079h, 044h
 			DEFB 07Ch, 043h, 00Ch, 030h, 0C3h, 00Ch, 030h, 0C4h
-SINTBL3:	DEFB 080h, 049h, 00Fh, 0DAh, 0A2h, 021h, 068h, 0C2h
+			DEFB 080h, 049h, 00Fh, 0DAh, 0A2h, 021h, 068h, 0C2h
 ;    ORG 07752h
 B_SGN:      LD A,(HL)
             OR A
@@ -19526,7 +19511,7 @@ B_INP:    	PUSH	HL           	;
            	POP	HL            	;
            	JP	FLTHEX        	;)
 B_RND:     	PUSH	BC           	;
-           	LD	DE,(L077C8h)    	;[w
+           	LD	DE,(077C8h)    	;[w
            	LD	A,R            	;_
            	XOR	D             	;
            	RRC	A             	;
@@ -19539,7 +19524,7 @@ B_RND:     	PUSH	BC           	;
            	RLC	A             	;
            	LD	E,D            	;Z
            	LD	D,A            	;W
-           	LD	(L077C8h),DE    	;Sw
+           	LD	(077C8h),DE    	;Sw
            	PUSH	HL           	;
            	INC	HL            	;#
            	RES	7,D           	;
@@ -19555,14 +19540,15 @@ B_RND:     	PUSH	BC           	;
            	POP	BC            	;
            	RET               	;
 
-L077C8h:	DEFW 04193h			;      	SUB	E;LD	B,C         
+           	SUB	E             	;
+           	LD	B,C            	;A
 B_EXP:     	PUSH	BC           	;
            	LD	A,(HL)         	;~
            	OR	A              	;
            	JP	Z,L07437h      	;7t
            	INC	HL            	;#
            	LD	A,(HL)         	;~
-           	LD	(L07896h+1),A     	;2x
+           	LD	(07897h),A     	;2x
            	RES	7,(HL)        	;
            	DEC	HL            	;+
            	LD	DE,07A2Fh      	;/z
@@ -19579,7 +19565,7 @@ B_EXP:     	PUSH	BC           	;
            	CP	H              	;
            	JP	NZ,OVERFL1     	;n
            	LD	A,L            	;}
-           	LD	(L0788Bh+1),A     	;2x
+           	LD	(0788Ch),A     	;2x
            	POP	DE            	;
            	POP	HL            	;
            	PUSH	HL           	;
@@ -19608,9 +19594,9 @@ L07817h:   	POP	AF            	;
            	EX	DE,HL          	;
            	POP	BC            	;
            	DJNZ	L07809h      	;
-           	LD	(L07876h+1),A     	;2wx
+           	LD	(07877h),A     	;2wx
            	PUSH	DE           	;
-           	LD	DE,L07A27h      	;'z
+           	LD	DE,07A27h      	;'z
            	CALL	MUL      	;o
            	POP	DE            	;
            	PUSH	DE           	;
@@ -19619,20 +19605,20 @@ L07817h:   	POP	AF            	;
            	BIT	3,(IY+0)      	;^
            	JP	Z,L078ADh      	;x
            	INC	(HL)          	;4
-           	LD	DE,FLTEN      	;b
+           	LD	DE,06290h      	;b
            	CALL	ADD      	;l
            	DEC	(HL)          	;5
            	POP	DE            	;
 L07840h:   	PUSH	DE           	;
            	CALL	MUL      	;o
-           	LD	DE,FLTEN      	;b
+           	LD	DE,06290h      	;b
            	DEC	(HL)          	;5
            	CALL	ADD      	;l
            	INC	(HL)          	;4
            	POP	DE            	;
            	PUSH	DE           	;
            	CALL	MUL      	;o
-           	LD	DE,L07A1Fh      	;z
+           	LD	DE,07A1Fh      	;z
            	CALL	MUL      	;o
            	INC	(HL)          	;4
            	CALL	ONEADD      	;s
@@ -19650,8 +19636,8 @@ L07869h:   	CALL	ONEADD      	;s
            	PUSH	DE           	;
            	CALL	LDIR1      	;s
            	POP	HL            	;
-           	LD	DE,LOGTBL1      	;y
-L07876h:   	LD	A,000h         	;>
+           	LD	DE,0799Fh      	;y
+           	LD	A,000h         	;>
            	LD	B,008h         	;
 L0787Ah:   	RLC	A             	;
            	JR	NC,L07885h     	;0
@@ -19663,13 +19649,13 @@ L0787Ah:   	RLC	A             	;
 L07885h:   	CALL	ADDDEG      	;J[
            	DJNZ	L0787Ah      	;
            	LD	A,(HL)         	;~
-L0788Bh:	ADD	A,000h        	;
+           	ADD	A,000h        	;
            	JP	C,OVERFL1      	;n
            	LD	(HL),A         	;w
            	POP	DE            	;
            	CALL	MUL      	;o
            	POP	BC            	;
-L07896h:   	LD	A,000h         	;>
+           	LD	A,000h         	;>
            	RLC	A             	;
            	RET	NC            	;
            	PUSH	BC           	;
@@ -19704,11 +19690,11 @@ B_LOG:     	PUSH	BC           	;
            	OR	A              	;
            	JP	Z,IFCALL      	;6
            	SUB	081h          	;
-           	LD	(L0790Bh+1),A     	;2y
+           	LD	(0790Ch),A     	;2y
            	LD	(HL),081h      	;6
            	XOR	A             	;
            	LD	B,008h         	;
-           	LD	DE,LOGTBL1      	;y
+           	LD	DE,0799Fh      	;y
 L078D8h:   	PUSH	BC           	;
            	PUSH	AF           	;
            	CALL	CMP      	;a
@@ -19728,7 +19714,7 @@ L078EEh:   	POP	AF            	;
            	CALL	ADDDEG      	;J[
            	POP	BC            	;
            	DJNZ	L078D8h      	;
-           	LD	(L07943h+1),HL    	;"Dy
+           	LD	(07944h),HL    	;"Dy
            	LD	DE,00008h      	;
            	ADD	HL,DE         	;
            	LD	E,A            	;_
@@ -19746,11 +19732,11 @@ L0790Bh:   	LD	A,000h         	;>
 L07913h:   	PUSH	HL           	;
            	LD	DE,00008h      	;
            	ADD	HL,DE         	;
-           	LD	(L07940h+1),HL    	;"Ay
+           	LD	(07941h),HL    	;"Ay
            	LD	E,A            	;_
            	LD	D,000h         	;
            	CALL	FLTHEX      	;)
-           	LD	A,(L0790Bh+1)     	;:y
+           	LD	A,(0790Ch)     	;:y
            	AND	080h          	;
            	INC	HL            	;#
            	OR	(HL)           	;
@@ -19760,14 +19746,14 @@ L07913h:   	PUSH	HL           	;
            	POP	HL            	;
            	CALL	ADD      	;l
            	LD	A,(IY+0)       	;~
-           	LD	DE,L07A37h      	;7z
+           	LD	DE,07A37h      	;7z
            	CP	004h           	;
            	JR	Z,L0793Ch      	;(
-           	LD	DE,L07A27h      	;'z
+           	LD	DE,07A27h      	;'z
 L0793Ch:   	CALL	MUL      	;o
            	PUSH	HL           	;
-L07940h:  	LD	DE,00000h      	;
-L07943h:    LD	HL,00000h      	;!
+           	LD	DE,00000h      	;
+           	LD	HL,00000h      	;!
            	PUSH	HL           	;
            	PUSH	DE           	;
            	CALL	LDIR8      	;s
@@ -19789,17 +19775,17 @@ L07943h:    LD	HL,00000h      	;!
            	PUSH	DE           	;
            	CALL	LDIR8      	;s
            	POP	HL            	;
-           	LD	DE,LOGTBL0      	;y
+           	LD	DE,07997h      	;y
            	CALL	ADD      	;l
            	EX	DE,HL          	;
            	POP	HL            	;
            	CALL	MUL      	;o
-           	LD	DE,FLTEN      	;b
+           	LD	DE,06290h      	;b
            	INC	(HL)          	;4
            	CALL	ADD      	;l
            	DEC	(HL)          	;5
            	EX	DE,HL          	;
-           	LD	HL,(L07943h+1)    	;*Dy
+           	LD	HL,(07944h)    	;*Dy
            	CALL	MUL      	;o
            	LD	DE,LOGTBL      	;y
            	CALL	MUL      	;o
@@ -19808,31 +19794,32 @@ L07943h:    LD	HL,00000h      	;!
            	POP	BC            	;
            	RET               	;
 LOGTBL:
-			DEFB 07Fh, 04Ch, 0CCh, 0CCh, 0CCh, 0CCh, 0CCh, 0CDh
-LOGTBL0:	DEFB 081h, 055h, 055h, 055h, 055h, 055h, 055h, 055h
-LOGTBL1:	DEFB 081h, 035h, 004h, 0F3h, 033h, 0F9h, 0DEh, 065h
-			DEFB 081h, 018h, 037h, 0F0h, 051h, 08Dh, 0B8h, 0AAh
-			DEFB 081h, 00Bh, 095h, 0C1h, 0E3h, 0EAh, 08Bh, 0D7h
-			DEFB 081h, 005h, 0AAh, 0C3h, 067h, 0CCh, 048h, 07Bh
-			DEFB 081h, 002h, 0CDh, 086h, 098h, 0ACh, 02Bh, 0A2h
-			DEFB 081h, 001h, 064h, 0D1h, 0F3h, 0BCh, 003h, 008h
-			DEFB 081h, 000h, 0B1h, 0EDh, 04Fh, 0D9h, 099h, 0ACh
-			DEFB 081h, 000h, 058h, 0D7h, 0D2h, 0D5h, 0E5h, 0F7h
-			DEFB 080h, 035h, 004h, 0F3h, 033h, 0F9h, 0DEh, 065h
-			DEFB 080h, 057h, 044h, 0FCh, 0CAh, 0D6h, 09Dh, 06Bh
-			DEFB 080h, 06Ah, 0C0h, 0C6h, 0E7h, 0DDh, 024h, 03Ah
-			DEFB 080h, 075h, 025h, 07Dh, 015h, 024h, 086h, 0CDh
-			DEFB 080h, 07Ah, 083h, 0B2h, 0DBh, 072h, 02Ah, 003h
-			DEFB 080h, 07Dh, 03Eh, 00Ch, 00Ch, 0F4h, 086h, 0C1h
-			DEFB 080h, 07Eh, 09Eh, 011h, 05Ch, 07Bh, 08Fh, 088h
-			DEFB 080h, 07Fh, 04Eh, 0CBh, 059h, 051h, 01Eh, 0C9h
-L07A1Fh:	DEFB 07Ah, 008h, 088h, 088h, 088h, 088h, 088h, 089h
-L07A27h:	DEFB 080h, 031h, 072h, 017h, 0F7h, 0D1h, 0CFh, 07Ah
-			DEFB 081h, 038h, 0AAh, 03Bh, 029h, 05Ch, 017h, 0F1h
-L07A37h:	DEFB 080h, 031h, 072h, 018h
+			DEFB 07Fh
+			DEFB 04Ch, 0CCh, 0CCh, 0CCh, 0CCh, 0CCh, 0CDh, 081h
+			DEFB 055h, 055h, 055h, 055h, 055h, 055h, 055h, 081h
+			DEFB 035h, 004h, 0F3h, 033h, 0F9h, 0DEh, 065h, 081h
+			DEFB 018h, 037h, 0F0h, 051h, 08Dh, 0B8h, 0AAh, 081h
+			DEFB 00Bh, 095h, 0C1h, 0E3h, 0EAh, 08Bh, 0D7h, 081h
+			DEFB 005h, 0AAh, 0C3h, 067h, 0CCh, 048h, 07Bh, 081h
+			DEFB 002h, 0CDh, 086h, 098h, 0ACh, 02Bh, 0A2h, 081h
+			DEFB 001h, 064h, 0D1h, 0F3h, 0BCh, 003h, 008h, 081h
+			DEFB 000h, 0B1h, 0EDh, 04Fh, 0D9h, 099h, 0ACh, 081h
+			DEFB 000h, 058h, 0D7h, 0D2h, 0D5h, 0E5h, 0F7h, 080h
+			DEFB 035h, 004h, 0F3h, 033h, 0F9h, 0DEh, 065h, 080h
+			DEFB 057h, 044h, 0FCh, 0CAh, 0D6h, 09Dh, 06Bh, 080h
+			DEFB 06Ah, 0C0h, 0C6h, 0E7h, 0DDh, 024h, 03Ah, 080h
+			DEFB 075h, 025h, 07Dh, 015h, 024h, 086h, 0CDh, 080h
+			DEFB 07Ah, 083h, 0B2h, 0DBh, 072h, 02Ah, 003h, 080h
+			DEFB 07Dh, 03Eh, 00Ch, 00Ch, 0F4h, 086h, 0C1h, 080h
+			DEFB 07Eh, 09Eh, 011h, 05Ch, 07Bh, 08Fh, 088h, 080h
+			DEFB 07Fh, 04Eh, 0CBh, 059h, 051h, 01Eh, 0C9h, 07Ah
+			DEFB 008h, 088h, 088h, 088h, 088h, 088h, 089h, 080h 
+			DEFB 031h, 072h, 017h, 0F7h, 0D1h, 0CFh, 07Ah, 081h
+			DEFB 038h, 0AAh, 03Bh, 029h, 05Ch, 017h, 0F1h, 080h
+			DEFB 031h, 072h, 018h
 
 ;    ORG 07A3BH
-VSTART: DEFW 07C9Dh
+VSTART: DEFW 07C89h
 STRPTR:	DEFW 0
 STKLMT: DEFW 0
 STRTOP: DEFW 0   ; EQU  07a41h
@@ -19852,5 +19839,5 @@ KEYBUF: DEFB 00Ch
 		DEFB 00Dh
 		DEFM '       BY HUDSON SOFT'
 		DEFB 00Dh
-		DEFS 07B00h-$
+		DEFS 072h
 

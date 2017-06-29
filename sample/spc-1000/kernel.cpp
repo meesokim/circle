@@ -393,13 +393,36 @@ void CKernel::toggle_motor()
 {
 	spcsys.cas.motor = spcsys.cas.motor ? 0 : 1;
 }
-
+int tape_display = 0;
+int vol_display = 0;
 void CKernel::volume(int i)
 {
 	if (i > 0 && spcsys.volume < 10)
+	{
+		vol_display = 30;		
 		spcsys.volume++;
-	if (i < 0 && spcsys.volume > 0)
+	} else if (i < 0 && spcsys.volume > 0)
+	{
+		vol_display = 30;		
 		spcsys.volume--;
+	}
+}
+void CKernel::tape(int i)
+{
+	if (i == 1)
+	{
+		tape_display = 30;
+		tappos += tapsize / 10;
+		if (tappos > tapsize)
+			tappos = 0;		
+	} else if (i == -1)
+	{
+		tape_display = 30;
+		tappos -= tapsize / 10;
+		if (tappos < 0)
+			tappos = tapsize - 1;
+	}
+	sprintf(title, "%d%\r", tappos * 100 / tapsize);	
 }
 
 int count = 0;
@@ -519,6 +542,7 @@ TShutdownMode CKernel::Run (void)
 			}
 			if (frame%33 == 0)
 			{
+				int bg = m_Framebuffer.GetBuffer()[1];
 				if (vdp != 0 && vdp->show == 1)
 				{
 					char *p = (char *)m_Framebuffer.GetBuffer()+320*(240-192)/2;
@@ -532,20 +556,29 @@ TShutdownMode CKernel::Run (void)
 					vdp->scanline = 0;
 				} else
 					Update6847(spcsys.GMODE, m_Framebuffer.GetBuffer());
-				if (spcsys.cas.read)
+				if (spcsys.cas.read || tape_display > 0)
 				{
+					tape_display--;
 					perc = tappos * 100 / tapsize;
 					UG_FillFrame( 40, 10, 40+270*perc/100, 15, 0x3);
-					UG_SetForecolor( 0xff);
-					UG_SetBackcolor( 0x0);
-					UG_PutString( 3, 7, title );
+					UG_SetForecolor( bg == 0 ? 0xff : 0);
+					UG_SetBackcolor( bg );
+					UG_PutString( 7, 7, title );
 					spcsys.cas.title[0] = 0;
 				}
 				if (spcsys.cas.title)
 				{
-					UG_SetForecolor( 0xff);
-					UG_SetBackcolor( 0x0);
+					UG_SetForecolor( bg == 0 ? 0xff : 0);
+					UG_SetBackcolor( bg);
 					UG_PutString( 3, 220, spcsys.cas.title );
+				}
+				if (vol_display-->0)
+				{
+					int y = 20 + (10 - spcsys.volume) * 18; 
+					UG_FillFrame( 13,  y, 18, 210, 0x4);
+					UG_SetForecolor ( 0xff);
+					UG_SetBackcolor ( 0x0);
+					UG_PutString( 3, 220, "VOL");
 				}
 				memcpy(m_Screen.GetBuffer(), m_Framebuffer.GetBuffer(), 320*240);
 			}
@@ -607,6 +640,12 @@ void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned cha
 					vdp->show = -1;
 				else if (vdp->show == -1)
 					vdp->show = 1;
+				return;
+			} else if (RawKeys[0] == 0x2d) {
+				s_pThis->tape(-1);
+				return;
+			} else if (RawKeys[0] == 0x2e) {
+				s_pThis->tape(1);
 				return;
 			}
 		}
@@ -672,7 +711,7 @@ void ReadNext(void)
 
 void OutZ80(register word Port,register byte Value)
 {
-	printf("VRAM[%x]=%x\n", Port, Value);
+	//printf("VRAM[%x]=%x\n", Port, Value);
 
 	if ((Port & 0xE000) == 0x0000) // VRAM area
 	{
@@ -785,7 +824,7 @@ byte InZ80(register word Port)
 		else
 			return tms9918_readport0(vdp);
 #endif
-	} else if (Port & 0x3)
+	} else if (Port == 0x4003)
 	{
 		return ReadVal() ? 0x80 : 0;
 	} else if ((Port & 0xFFFE) == 0x4000) // PSG
@@ -851,7 +890,7 @@ int CasRead(CassetteTape *cas)
 	{
 		cas->rdVal = ReadVal();
 		cas->lastTime = cycles;
-		cas->bitTime = cas->rdVal ? (LTONE * 0.6) : (STONE * 0.9);
+		cas->bitTime = cas->rdVal ? (LTONE * 0.7) : (STONE * 0.9) - (bitTime - cas->bitTime) ;
 	}
 
 	switch (cas->rdVal)

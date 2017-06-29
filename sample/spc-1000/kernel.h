@@ -103,6 +103,7 @@ public:
 	void toggle_turbo();
 	void toggle_motor();
 	void volume(int i);
+	void tape(int i);
 };
 
 #endif

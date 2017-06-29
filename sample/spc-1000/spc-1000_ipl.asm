@@ -20,7 +20,7 @@ SDLOAD		EQU 0Eh
 SDSAVE		EQU 0Fh
 SDLDNGO		EQU 010h
 
-   	LD	HL,$FB00      	;!
+   	LD	HL,#FB00      	;!
    	LD	DE,0FB00h      	;
    	LD	BC,AHEXIN      	;
    	LDIR              	;
@@ -514,17 +514,17 @@ RVRTFONT:
     RET               	;
 
 PATCOLOR:	
-;    LD	A,020h         	;
-;    LD	HL,00C45h      	;
-;    LD	(HL),A         	;;
-;	LD	HL,00B22h      	;
-;    LD	(HL),A         	;
-;   	LD	HL,00ADCh      	;
-;    LD	(HL),A         	; 
-;   	LD	HL,00AA2h      	;
-;    LD	(HL),A         	;
-;   	LD	HL,0090Ch      	;
-;    LD	(HL),A         	;
+    LD	A,020h         	;
+    LD	HL,00C45h      	;
+    LD	(HL),A         	;
+	LD	HL,00B22h      	;
+    LD	(HL),A         	;
+   	LD	HL,00ADCh      	;
+    LD	(HL),A         	; 
+   	LD	HL,00AA2h      	;
+    LD	(HL),A         	;
+   	LD	HL,0090Ch      	;
+    LD	(HL),A         	;
     EI                	;
     JP	BOOT           	;
     DEFS    572-497
@@ -549,9 +549,9 @@ L0FF16h:   	DEC	HL      ;
     LD	A,H            	;
     CP	015h           	;
     JR	NC,L0FF0Ah     	;
-    LD	HL,VSTART      	; 2. put data 09dh at address 7a3bh
+    LD	HL,07A3Bh      	; 2. put data 09dh at address 7a3bh
     LD	(HL),B         	;
-    LD	HL,CGCHR      	; 3. font height modification
+    LD	HL,0524Ah      	; 3. font height modification
 L0FF23h:   	LD	BC,0000Bh      	
     LD	D,H            	; 
     LD	E,L            	;
@@ -581,22 +581,22 @@ L0FF44h:
     LD	HL,PATCODE     	;
     LD	BC,PATCODEE - PATCODE      	;
     LDIR              	;
-    LD	HL,PATCH1      	; 
+    LD	HL,01425h      	; 
     LD	DE,07C75h      	;
     CALL	PATCHCD     ; 6. CALL 07c75h @ 01425h
-    LD	HL,PATCH2      	; 
+    LD	HL,04860h      	; 
     LD	DE,07C4Eh      	;
     CALL	PATCHCD     ; 7. CALL 07c4eh @ 04860h
-    LD	HL,PATCH3      	; 
+    LD	HL,048A5h      	; 
     LD	DE,07C5Bh      	;
-    CALL	PATCHCD     ; 8. CALL 07c5bh @ 048a5h
-    LD	HL,PATCH4      	; 
+    CALL	PATCHCD     ; 8. CALL 07c5bh @ 0485ah
+    LD	HL,005EFh      	; 
     LD	DE,07C6Ch      	;
     CALL	PATCHCD     ; 9. CALL 07c6ch @ 005efh
-    LD	HL,PATCH5+1      	;
+    LD	HL,01B89h      	;
     LD	DE,07C90h      	;
     CALL	PATCHDE     ; 10. put 07c90h @ 01b89h CALL GRAPH -> 7c90h
-    LD	HL,PATCH6      	;
+    LD	HL,01485h      	;
     LD	DE,07C89h      	;
     CALL	PATCHCD     ; 11. CALL 07c89h @ 01485h 
     CALL	INITSB      ;
@@ -665,4 +665,4 @@ L0FFDCh:   	PUSH	HL           	;
 CURXY:
 	DEFW	0
 PATCODEE:
-	DEFS 10000h-$, 0ffh
+	DEFS 10000h-$, 0ffh	
