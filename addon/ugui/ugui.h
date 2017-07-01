@@ -586,6 +586,7 @@ typedef struct
    UG_COLOR fore_color;
    UG_COLOR back_color;
    UG_COLOR desktop_color;
+   UG_COLOR tran_color;
    UG_U8 state;
    UG_DRIVER driver[NUMBER_OF_DRIVERS];
 } UG_GUI;
@@ -920,6 +921,7 @@ void UG_ConsoleSetForecolor( UG_COLOR c );
 void UG_ConsoleSetBackcolor( UG_COLOR c );
 void UG_SetForecolor( UG_COLOR c );
 void UG_SetBackcolor( UG_COLOR c );
+void UG_SetTrancolor( UG_COLOR c );
 UG_S16 UG_GetXDim( void );
 UG_S16 UG_GetYDim( void );
 void UG_FontSetHSpace( UG_U16 s );

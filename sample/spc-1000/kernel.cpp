@@ -531,29 +531,25 @@ TShutdownMode CKernel::Run (void)
 			frame++;
 			ticks ++;
 			spcsys.tick++;		// advance spc tick by 1 msec
-			R->ICount += I_PERIOD;	// re-init counter (including compensation)
-			if ((frame % 16 == 0))
-			{
-				if (R->IFF & IFF_EI)	// if interrupt enabled, call Z-80 interrupt routine
-				{
-					R->IFF |= IFF_IM1 | IFF_1;
-					IntZ80(R, 0);
-				}
-			}
 			if (frame%33 == 0)
 			{
 				int bg = m_Framebuffer.GetBuffer()[1];
 				if (vdp != 0 && vdp->show == 1)
 				{
-					char *p = (char *)m_Framebuffer.GetBuffer()+320*(240-192)/2;
-					for (int i = 0; i < 192; i++)
+					if (1)
 					{
-						vdp->scanline = i;
-						tms9918_render_line(vdp);
-						memcpy(p+(320-256)/2, video_get_vbp(i), 256);
-						p += 320;
+						char *p = (char *)m_Framebuffer.GetBuffer();
+						memset(p, 32, 320*240);
+						p+=320*(240-192)/2;
+						for (int i = 0; i < 192; i++)
+						{
+							vdp->scanline = i;
+							tms9918_render_line(vdp);
+							memcpy(p+(320-256)/2, video_get_vbp(i), 256);
+							p += 320;
+						}
+						vdp->scanline = 0;
 					}
-					vdp->scanline = 0;
 				} else
 					Update6847(spcsys.GMODE, m_Framebuffer.GetBuffer());
 				if (spcsys.cas.read || tape_display > 0)
@@ -562,27 +558,53 @@ TShutdownMode CKernel::Run (void)
 					perc = tappos * 100 / tapsize;
 					UG_FillFrame( 40, 10, 40+270*perc/100, 15, 0x3);
 					UG_SetForecolor( bg == 0 ? 0xff : 0);
-					UG_SetBackcolor( bg );
+					UG_SetTrancolor ( 0x0);
+					UG_SetBackcolor( 0x0);
 					UG_PutString( 7, 7, title );
 					spcsys.cas.title[0] = 0;
 				}
 				if (spcsys.cas.title)
 				{
 					UG_SetForecolor( bg == 0 ? 0xff : 0);
-					UG_SetBackcolor( bg);
+					UG_SetTrancolor ( 0x0);
+					UG_SetBackcolor( 0x0);
 					UG_PutString( 3, 220, spcsys.cas.title );
 				}
 				if (vol_display-->0)
 				{
-					int y = 20 + (10 - spcsys.volume) * 18; 
-					UG_FillFrame( 13,  y, 18, 210, 0x4);
+					#define Y 50
+					#define X 290
+					int y = Y + (10 - spcsys.volume) * 14;
+					for(int i = 0; i <= 10; i++)
+					UG_DrawLine(X,Y+i*14,X+20,Y+i*14,0x4);
+					UG_FillFrame( X+7,  y, X+13, Y+140, 0x4);
 					UG_SetForecolor ( 0xff);
+					UG_SetTrancolor ( 0x0);
 					UG_SetBackcolor ( 0x0);
-					UG_PutString( 3, 220, "VOL");
+					//UG_PutString( X-2, 190, "VOL");
 				}
 				memcpy(m_Screen.GetBuffer(), m_Framebuffer.GetBuffer(), 320*240);
 			}
 			ay8910.Loop8910(&spcsys.ay8910, 1);
+			R->ICount += I_PERIOD;	// re-init counter (including compensation)
+			if (vdp != 0 && vdp->show == 1)
+			{
+				if (frame % 33 == 0 && R->IFF & IFF_EI)
+				{
+					R->IFF |= IFF_IM1 | IFF_1;
+					IntZ80(R, 0);
+					continue;
+				}
+			}						
+			else if ((frame % 16 == 0))
+			{
+				if (R->IFF & IFF_EI)	// if interrupt enabled, call Z-80 interrupt routine
+				{
+					R->IFF |= IFF_IM1 | IFF_1;
+					IntZ80(R, 0);
+					continue;
+				}
+			}			
 			ticks = frame * 1000 - (m_Timer.GetClockTicks() - pticks);
 			if (spcsys.cas.read || spcsys.turbo)
 			{
@@ -890,7 +912,7 @@ int CasRead(CassetteTape *cas)
 	{
 		cas->rdVal = ReadVal();
 		cas->lastTime = cycles;
-		cas->bitTime = cas->rdVal ? (LTONE * 0.7) : (STONE * 0.9) - (bitTime - cas->bitTime) ;
+		cas->bitTime = cas->rdVal ? (LTONE * 0.7) : (STONE * 0.9);
 	}
 
 	switch (cas->rdVal)

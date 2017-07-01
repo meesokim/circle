@@ -5039,6 +5039,11 @@ void UG_SetBackcolor( UG_COLOR c )
    gui->back_color = c;
 }
 
+void UG_SetTrancolor( UG_COLOR c)
+{
+   gui->tran_color = c;
+}
+
 UG_S16 UG_GetXDim( void )
 {
    return gui->x_dim;
@@ -5398,7 +5403,7 @@ void _UG_PutChar( char chr, UG_S16 x, UG_S16 y, UG_COLOR fc, UG_COLOR bc, const 
 				   {
 					  push_pixel(fc);
 				   }
-				   else
+				   else if (bc != gui->tran_color)
 				   {
 					  push_pixel(bc);
 				   }
@@ -5444,7 +5449,7 @@ void _UG_PutChar( char chr, UG_S16 x, UG_S16 y, UG_COLOR fc, UG_COLOR bc, const 
                {
                   gui->pset(xo,yo,fc);
                }
-               else
+               else if (bc != gui->tran_color)
                {
                   gui->pset(xo,yo,bc);
                }
