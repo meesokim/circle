@@ -38,7 +38,7 @@ class CKernel;
 #include <circle/usb/dwhcidevice.h>
 #include <circle/fs/fat/fatfs.h>
 #include <ugui/uguicpp.h>
-#include <sdcard/emmc.h>
+#include <SDCard/emmc.h>
 #include "pwmsound.h"
 #include "ay8910.h"
 
